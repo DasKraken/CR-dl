@@ -1,0 +1,20 @@
+{
+  "name": "cr-dl",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "argparse": "^1.0.10",
+    "async": "^2.6.0",
+    "crunchyroll-lib": "^1.0.11",
+    "langs": "^2.0.0",
+    "m3u8": "git+https://git@github.com/tedconf/node-m3u8.git",
+    "request": "^2.85.0",
+    "request-promise-native": "^1.0.5"
+  }
+}
