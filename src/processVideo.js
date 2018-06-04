@@ -25,7 +25,7 @@ module.exports = function processVideo(input, metadata, subtitles, output) {
 
         command.push("-c", "copy", output)
 
-        console.log(command)
+        //console.log(command)
         let proc = spawn('ffmpeg', command);
         proc.stdout.on('data', function (data) {
             console.log('[ffmpeg]: ' + data);
