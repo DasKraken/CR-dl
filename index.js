@@ -72,15 +72,30 @@ const run = async () => {
     }
   );
   download.addArgument(
-    ["-l", "--language"],
+    ["--subLangs"],
     {
       action: "store",
       type: "string",
-      help: "Specify subtitle language to set as default. (eg. enUS)",
+      help: "Specify subtitle languages as a comma separated list to include in video. (eg. deDE,enUS)",
+      metavar: "LANGS"
+    }
+  );
+  download.addArgument(
+    ["-l", "--subDefault"],
+    {
+      action: "store",
+      type: "string",
+      help: "Specify subtitle language to set as default. (eg. deDE)",
       metavar: "LANG"
     }
   );
-
+  download.addArgument(
+    ["--listSubs"],
+    {
+      action: "storeTrue",
+      help: "Don't download. Show list of available subtitle languages.",
+    }
+  );
   const args = parser.parseArgs();
 
   if (args.subcommand_name == "login") {

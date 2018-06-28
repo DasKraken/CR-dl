@@ -66,6 +66,11 @@ function cleanUp() {
     } catch (e) { };
 }
 
+async function isLoggedIn() {
+    let res = await httpClientInstance.get("http://www.crunchyroll.com/videos/anime");
+    return res.body.indexOf("<a href=\"/logout\"") > -1
+}
+
 async function login(username, password) {
     loadCookieJar();
     /*const loginPage = (await httpClientInstance.get("https://www.crunchyroll.com/login"));
@@ -101,11 +106,7 @@ async function login(username, password) {
         });
     } catch (e) { }
 
-    async function loggedIn() {
-        let res = await httpClientInstance.get("http://www.crunchyroll.com/videos/anime");
-        return res.body.indexOf("<a href=\"/logout\"") > -1
-    }
-    if (await loggedIn()) {
+    if (await isLoggedIn()) {
         console.log("Login successful");
     } else {
         console.error("Couldn't log in. Wrong credentials?");
@@ -206,22 +207,10 @@ async function downloadPlaylistUrl(url, resolution, onlySeason, options) {
 
     // console.log(JSON.stringify(list, undefined, "  "))
 }
-async function downloadVideoUrl(url, resolution, options) {
-    loadCookieJar();
 
-    const videoIdMatch = /([0-9]+)$/.exec(url);
-    if (!videoIdMatch) {
-        throw new Error("Invalid video URL");
-    }
-
-    const videoData = await getVideoData(url);
-    resolution = await getMaxWantedResolution(videoData, resolution)
-
-    const media = await getMedia(videoIdMatch[1], resolution, url);
-    //media.
-    const subtitles = media.getSubtitles();
+async function downloadsSubs(subtitles) {
     try { fs.mkdirSync("SubData") } catch (e) { }
-    const subs = [];
+    const subsAvailiable = [];
     for (let i = 0; i < subtitles.length; i++) {
         const stta = new SubtitleToAss(subtitles[i]);
         const subtitleModel = await stta.getModel();
@@ -231,14 +220,83 @@ async function downloadVideoUrl(url, resolution, options) {
         const ass = await stta.getContentAsAss();
         const filename = "SubData/" + subtitleModel.langCode + ".ass"
         fs.writeFileSync(filename, ass)
-        subs.push({
+        subsAvailiable.push({
             title: title,
             language: langCode,
+            langCode: subtitleModel.langCode,
             path: filename,
-            default: options.language ? options.language == subtitleModel.langCode : subtitles[i].isDefault()
+            default: subtitles[i].isDefault()
         })
-
     }
+    return subsAvailiable;
+}
+
+const possibleSubValues = ["enUS", "esLA", "esES", "frFR", "ptBR", "arME", "itIT", "deDE", "ruRU",]
+async function verifySubList(list) {
+    for (const lang of list) {
+        if (possibleSubValues.indexOf(lang) == -1) {
+            throw new Error("Unknown subtitle language: " + lang + ". Supported languages are: " + possibleSubValues.join(", "));
+        }
+    }
+}
+
+async function downloadVideoUrl(url, resolution, options) {
+    loadCookieJar();
+    //if (options.subLangs) {
+    //    await verifySubList(options.subLangs.split(","))
+    //}
+    const videoIdMatch = /([0-9]+)$/.exec(url);
+    if (!videoIdMatch) {
+        throw new Error("Invalid video URL");
+    }
+
+    const videoData = await getVideoData(url);
+    resolution = await getMaxWantedResolution(videoData, resolution)
+
+    const media = await getMedia(videoIdMatch[1], resolution, url);
+
+    //media.
+    const subtitles = media.getSubtitles();
+    const subsAvailiable = await downloadsSubs(subtitles);
+
+    if (options.listSubs) {
+        console.table(subsAvailiable);
+        return;
+    }   
+
+    let subsToInclude = [];
+    if (options.subLangs) {
+        const langs = options.subLangs.split(",")
+        for (const lang of langs) {
+            const sub = subsAvailiable.find((v) => { return v.langCode == lang });
+            if (!sub) {
+                console.error("Subtitles for " + lang + " not available. Skipping...");
+            } else {
+                subsToInclude.push(sub);
+            }
+        }
+    } else {
+        subsToInclude = subsAvailiable;
+    }
+
+    if (options.subDefault) {
+        let defaultSet = false;
+        for (const sub of subsToInclude) {
+            if (sub.langCode == options.subDefault) {
+                sub.default = true;
+                defaultSet = true;
+            } else {
+                sub.default = false;
+            }
+        }
+        if (!defaultSet) {
+            throw new Error("Couldn't set " + options.subDefault + " as default subtitle: subtitle not available.")
+        }
+    }
+
+    console.log("Following subtitles will be included: ")
+    console.table(subsToInclude);
+
     const metadata = {
         episodeTitle: media.getMetadata().getEpisodeTitle(),
         seriesTitle: media.getMetadata().getSeriesTitle(),
@@ -257,9 +315,9 @@ async function downloadVideoUrl(url, resolution, options) {
     const outputFileName = outputDirectory + toFilename(metadata.seasonTitle) + " - " + toFilename(metadata.episodeNumber) + " - " + toFilename(metadata.episodeTitle) + " [" + resolution + "]" + ".mkv"
 
     await downloadVideoFromM3U(media.getStream().getFile(), "VodVid", options)
-    await processVideo("VodVid.m3u8", metadata, subs, outputFileName)
+    await processVideo("VodVid.m3u8", metadata, subsToInclude, outputFileName)
     saveCookieJar();
     cleanUp();
 }
 
-module.exports = { downloadVideoUrl, downloadPlaylistUrl, login, logout, cleanUp }
+module.exports = { downloadVideoUrl, downloadPlaylistUrl, login, logout, cleanUp, isLoggedIn }
