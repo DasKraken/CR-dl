@@ -1,6 +1,21 @@
 const CrDl = require("./src/CrDl");
+const { spawn } = require('child_process');
+
+function verifyFfmpeg() {
+  return new Promise((resolve, reject) => {
+    var proc = spawn('ffmpeg');
+    proc.on('error', function (err) { reject() })
+    proc.on('close', function (err) { resolve() })
+  });
+}
 
 const run = async () => {
+  try {
+    await verifyFfmpeg();
+  } catch (e) {
+    console.error("Error: ffmpeg needs to be installed");
+    return;
+  }
 
   const ArgumentParser = require("argparse").ArgumentParser;
   const parser = new ArgumentParser({
