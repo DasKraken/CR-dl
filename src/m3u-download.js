@@ -79,7 +79,6 @@ function getFilenameFromURI(uri) {
 }
 
 async function downloadFile(uri, dest, options) {
-    console.log(options.maxAttempts)
     for (let attempt = 0; attempt < options.maxAttempts; attempt++) {
         try {
             await new Promise((resolve, reject) => {
@@ -94,12 +93,14 @@ async function downloadFile(uri, dest, options) {
             return;
         } catch (e) {
             if (e instanceof NetworkException) {
-                if (attempt >= options.maxAttempts - 1) throw e;
+                if (attempt >= options.maxAttempts - 1 || options.abort) throw e;
             } else {
                 throw e;
             }
+            console.log("Network error: " + e.message + ". Retrying...");
         }
     }
+    throw new RuntimeException("Too many attempts. (This code should't be reachable)");
 }
 
 async function downloadString(uri, options) {
@@ -120,19 +121,22 @@ async function downloadString(uri, options) {
             });
         } catch (e) {
             if (e instanceof NetworkException) {
-                if (attempt >= options.maxAttempts - 1) throw e;
+                if (attempt >= options.maxAttempts - 1 || options.abort) throw e;
             } else {
                 throw e;
             }
+            console.log("Network error: " + e.message + ". Retrying...");
         }
     }
+    throw new RuntimeException("Too many attempts. (This code should't be reachable)");
 }
 
 
 async function downloadVideoFromM3U(url, dest, options) {
-    options = options || {};
+    options = Object.assign({}, options);
     options.connections = options.connections || 20;
     options.maxAttempts = options.maxAttempts || 5;
+    options.abort = false; // when set to true, connections should not be reattempted
     const m3u = await downloadString(url, options)
     const m3uData = await parseM3U(m3u);
     if (m3uData.items.StreamItem.length > 0) { // Stream List
@@ -162,6 +166,7 @@ async function downloadVideoFromM3U(url, dest, options) {
 
             }, err => {
                 if (err) {
+                    options.abort = true;
                     reject(err);
                     return;
                 }
