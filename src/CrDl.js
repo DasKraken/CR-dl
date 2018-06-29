@@ -262,11 +262,14 @@ async function downloadVideoUrl(url, resolution, options) {
     if (options.listSubs) {
         console.table(subsAvailiable);
         return;
-    }   
+    }
 
     let subsToInclude = [];
     if (options.subLangs) {
         const langs = options.subLangs.split(",")
+        if (!options.subDefault) {
+            options.subDefault = langs[0];
+        }
         for (const lang of langs) {
             const sub = subsAvailiable.find((v) => { return v.langCode == lang });
             if (!sub) {
@@ -301,7 +304,8 @@ async function downloadVideoUrl(url, resolution, options) {
         episodeTitle: media.getMetadata().getEpisodeTitle(),
         seriesTitle: media.getMetadata().getSeriesTitle(),
         episodeNumber: media.getMetadata().getEpisodeNumber(),
-        seasonTitle: videoData.seasonTitle || media.getMetadata().getSeriesTitle()
+        seasonTitle: videoData.seasonTitle || media.getMetadata().getSeriesTitle(),
+        resolution: resolution,
     }
 
     if (!isNaN(metadata.episodeNumber)) {

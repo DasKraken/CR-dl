@@ -100,7 +100,7 @@ const run = async () => {
     {
       action: "store",
       type: "string",
-      help: "Specify subtitle language to set as default. (eg. deDE)",
+      help: "Specify subtitle language to set as default. (eg. deDE) (Default: if --subLangs defined then the first entry, crunchyroll default otherwise)",
       metavar: "LANG"
     }
   );
