@@ -1,4 +1,5 @@
 const { spawn } = require('child_process');
+const { UserInputException, RuntimeException, NetworkException } = require("./Exceptions");
 
 module.exports = function processVideo(input, metadata, subtitles, output) {
     return new Promise((resolve, reject) => {
@@ -38,19 +39,15 @@ module.exports = function processVideo(input, metadata, subtitles, output) {
         });
 
         proc.on('close', (code) => {
-            if (code !== 0) {
-                console.log(`ffmpeg process exited with code ${code}`);
-            }
-
             if (code == 0) {
                 //added = true;
                 //// downloadedIds.episodes[episodeId] = true;
                 /// fs.writeFileSync("downloadedIds.json", JSON.stringify(downloadedIds));
                 resolve();
             } else {
-                reject();
+                reject(new RuntimeException(`ffmpeg process exited with code ${code}`));
             }
         });
-        proc.on('error', function (err) { console.error(err) })
+        proc.on('error', function (err) { throw new RuntimeException(err) })
     });
 }

@@ -1,4 +1,4 @@
-
+const { UserInputException, RuntimeException, NetworkException } = require("./Exceptions");
 const rp = require("request-promise-native");
 const request = require("request");
 var async = require("async");
@@ -66,6 +66,9 @@ function parseM3U(data) {
             resolve(m3u);
             // fully parsed m3u file
         });
+        parser.on('error', function (err) {
+            reject(err);
+        });
         parser.write(data)
         parser.end();
     })
@@ -73,6 +76,18 @@ function parseM3U(data) {
 
 function getFilenameFromURI(uri) {
     return decodeURI(uri.match(/\/([^/?]+)(?:\?.*)?$/)[1])
+}
+
+function downloadFile(uri, dest) {
+    return new Promise((resolve, reject) => {
+        request(uri, { forever: true, timeout: 20000 }).on("error", (e) => {
+            reject(new NetworkException(e.message));
+        }).on("response", (response) => {
+            if (response.statusCode != 200) {
+                reject(new NetworkException("HTTP status code: " + (response.statusCode)));
+            }
+        }).pipe(fs.createWriteStream(dest)).on("finish", resolve);
+    });
 }
 
 async function downloadVideoFromM3U(url, dest, options) {
@@ -86,24 +101,22 @@ async function downloadVideoFromM3U(url, dest, options) {
         try { fs.mkdirSync(dest + "Data/") } catch (e) { }
         if (m3uData.properties["EXT-X-KEY"]) {
             const keyURIMatch = m3uData.properties["EXT-X-KEY"].match(/URI="([^"]+)"/)
-            if (!keyURIMatch) throw new Error("no key URI found")
+            if (!keyURIMatch) throw new RuntimeException("No key URI found")
             const keyURI = keyURIMatch[1];
 
             await new Promise((resolve, reject) => {
                 request(keyURI).on("error", (e) => {
-                    console.error(e);
-                    reject(e);
+                    reject(new NetworkException(e.message));
                 }).on("response", (response) => {
                     if (response.statusCode != 200) {
-                        console.error("Http error: " + (response.statusCode));
-                        reject()
+                        reject(new NetworkException("HTTP error: " + (response.statusCode)))
                     }
                 }).pipe(fs.createWriteStream(dest + "Data/" + getFilenameFromURI(keyURI))).on("finish", resolve);
             })
             m3uData.properties["EXT-X-KEY"] = m3uData.properties["EXT-X-KEY"].replace(keyURI, dest + "Data/" + getFilenameFromURI(keyURI));
 
         } else {
-            console.log("No key found, this should never happen")
+            throw new RuntimeException("No key found. This should never happen")
         }
 
         await new Promise((resolve, reject) => {
@@ -113,18 +126,10 @@ async function downloadVideoFromM3U(url, dest, options) {
                 const filename = getFilenameFromURI(value.properties.uri);
                 const uri = value.properties.uri;
                 value.properties.uri = dest + "Data/" + filename;
-                request(uri, {forever:true}).on("error", (e) => {
-                    console.error(e);
-                    process.exit(1);
-                }).on("response", (response) => {
-                    if (response.statusCode != 200) {
-                        console.error("Http error: " + (response.statusCode));
-                        process.exit(1);
-                    }
-                }).pipe(fs.createWriteStream(dest + "Data/" + filename)).on("finish", callback);
+                downloadFile(uri, dest + "Data/" + filename).then(callback, callback)
+
             }, err => {
                 if (err) {
-                    console.error(err.message);
                     reject(err);
                     return;
                 }

@@ -2,6 +2,7 @@ const { ISubtitle } = require('crunchyroll-lib/models/ISubtitle');
 const { DOMParser } = require('crunchyroll-lib/services/xml/DOMParser');
 const { Document } = require('crunchyroll-lib/services/xml/Document');
 const { Element } = require('crunchyroll-lib/services/xml/Element');
+const { UserInputException, RuntimeException, NetworkException } = require("./Exceptions");
 
 class BaseXMLModel {
 
@@ -16,7 +17,7 @@ class BaseXMLModel {
         return children[i];
       }
     }
-    throw new Error("Element " + tagName + " not found.");
+    throw new RuntimeException("Element " + tagName + " not found.");
   }
 }
 
@@ -202,7 +203,7 @@ module.exports = class SubtitleToAss {
     const document = await (new DOMParser()).parseFromString(content);
 
     const subtitleScript = document.getFirstElement();
-    if (!subtitleScript) throw new Error("No content in XML");
+    if (!subtitleScript) throw new RuntimeException("No content in XML");
 
     this._model = new SubtitleXMLModel(subtitleScript);
     return this._model;

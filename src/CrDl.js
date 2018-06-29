@@ -1,5 +1,6 @@
 const request = require('request');
 const { NodeHttpClient, setCookieJar } = require("./NodeHttpClient");
+const { UserInputException, RuntimeException, NetworkException } = require("./Exceptions");
 const SubtitleToAss = require("./SubtitleToAss");
 const downloadVideoFromM3U = require("./m3u-download");
 const processVideo = require("./processVideo");
@@ -109,7 +110,7 @@ async function login(username, password) {
     if (await isLoggedIn()) {
         console.log("Login successful");
     } else {
-        console.error("Couldn't log in. Wrong credentials?");
+        throw new UserInputException("Couldn't log in. Wrong credentials?")
     }
     saveCookieJar();
 }
@@ -138,10 +139,9 @@ async function getVideoData(url) {
     return { supportedResolutions, seasonTitle };
 }
 
-
 async function getMaxWantedResolution(videoData, res) {
     if (resolutionOrder.indexOf(res) == -1)
-        throw new Error("Unsupported resolution. Valid are: " + resolutionOrder.join(", "));
+        throw new UserInputException("Unsupported resolution. Valid are: " + resolutionOrder.join(", "));
     res = res || "1080p";
 
     if (videoData.supportedResolutions.indexOf(res) > -1) {
@@ -186,7 +186,7 @@ async function downloadPlaylistUrl(url, resolution, onlySeason, options) {
 
     if (onlySeason) {
         if (isNaN(onlySeason) || parseInt(onlySeason) > list.length || parseInt(onlySeason) < 1) {
-            console.error("Invalid season number: " + onlySeason);
+            throw new UserInputException("Invalid season number: " + onlySeason);
             return;
         } else {
             list = [list[parseInt(onlySeason) - 1]];
@@ -194,7 +194,7 @@ async function downloadPlaylistUrl(url, resolution, onlySeason, options) {
     }
 
     if (list.length == 1 && list[0].episodes.length == 0) {
-        console.error("No Episodes found.")
+        throw new UserInputException("No Episodes found.")
         return;
     }
 
@@ -235,7 +235,7 @@ const possibleSubValues = ["enUS", "esLA", "esES", "frFR", "ptBR", "arME", "itIT
 async function verifySubList(list) {
     for (const lang of list) {
         if (possibleSubValues.indexOf(lang) == -1) {
-            throw new Error("Unknown subtitle language: " + lang + ". Supported languages are: " + possibleSubValues.join(", "));
+            throw new UserInputException("Unknown subtitle language: " + lang + ". Supported languages are: " + possibleSubValues.join(", "));
         }
     }
 }
@@ -247,7 +247,7 @@ async function downloadVideoUrl(url, resolution, options) {
     //}
     const videoIdMatch = /([0-9]+)$/.exec(url);
     if (!videoIdMatch) {
-        throw new Error("Invalid video URL");
+        throw new UserInputException("Invalid video URL");
     }
 
     const videoData = await getVideoData(url);
@@ -293,7 +293,7 @@ async function downloadVideoUrl(url, resolution, options) {
             }
         }
         if (!defaultSet) {
-            throw new Error("Couldn't set " + options.subDefault + " as default subtitle: subtitle not available.")
+            throw new UserInputException("Couldn't set " + options.subDefault + " as default subtitle: subtitle not available.")
         }
     }
 
