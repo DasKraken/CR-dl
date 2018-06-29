@@ -78,22 +78,62 @@ function getFilenameFromURI(uri) {
     return decodeURI(uri.match(/\/([^/?]+)(?:\?.*)?$/)[1])
 }
 
-function downloadFile(uri, dest) {
-    return new Promise((resolve, reject) => {
-        request(uri, { forever: true, timeout: 20000 }).on("error", (e) => {
-            reject(new NetworkException(e.message));
-        }).on("response", (response) => {
-            if (response.statusCode != 200) {
-                reject(new NetworkException("HTTP status code: " + (response.statusCode)));
+async function downloadFile(uri, dest, options) {
+    console.log(options.maxAttempts)
+    for (let attempt = 0; attempt < options.maxAttempts; attempt++) {
+        try {
+            await new Promise((resolve, reject) => {
+                request(uri, { forever: true, timeout: 20000 }).on("error", (e) => {
+                    reject(new NetworkException(e.message));
+                }).on("response", (response) => {
+                    if (response.statusCode != 200) {
+                        reject(new NetworkException("HTTP status code: " + (response.statusCode)));
+                    }
+                }).pipe(fs.createWriteStream(dest)).on("finish", (resolve));
+            });
+            return;
+        } catch (e) {
+            if (e instanceof NetworkException) {
+                if (attempt >= options.maxAttempts - 1) throw e;
+            } else {
+                throw e;
             }
-        }).pipe(fs.createWriteStream(dest)).on("finish", resolve);
-    });
+        }
+    }
 }
+
+async function downloadString(uri, options) {
+    for (let attempt = 0; attempt < options.maxAttempts; attempt++) {
+        try {
+            return await new Promise((resolve, reject) => {
+                request(uri, { forever: true, timeout: 20000 }, (error, response, body) => {
+                    if (error) {
+                        reject(new NetworkException(e.message));
+                        return;
+                    }
+                    if (response.statusCode != 200) {
+                        reject(new NetworkException("HTTP status code: " + (response.statusCode)));
+                        return;
+                    }
+                    resolve(body);
+                })
+            });
+        } catch (e) {
+            if (e instanceof NetworkException) {
+                if (attempt >= options.maxAttempts - 1) throw e;
+            } else {
+                throw e;
+            }
+        }
+    }
+}
+
 
 async function downloadVideoFromM3U(url, dest, options) {
     options = options || {};
     options.connections = options.connections || 20;
-    const m3u = (await rp(url)).toString();
+    options.maxAttempts = options.maxAttempts || 5;
+    const m3u = await downloadString(url, options)
     const m3uData = await parseM3U(m3u);
     if (m3uData.items.StreamItem.length > 0) { // Stream List
         await downloadVideoFromM3U(m3uData.items.StreamItem[0].properties.uri, dest, options)
@@ -104,15 +144,7 @@ async function downloadVideoFromM3U(url, dest, options) {
             if (!keyURIMatch) throw new RuntimeException("No key URI found")
             const keyURI = keyURIMatch[1];
 
-            await new Promise((resolve, reject) => {
-                request(keyURI).on("error", (e) => {
-                    reject(new NetworkException(e.message));
-                }).on("response", (response) => {
-                    if (response.statusCode != 200) {
-                        reject(new NetworkException("HTTP error: " + (response.statusCode)))
-                    }
-                }).pipe(fs.createWriteStream(dest + "Data/" + getFilenameFromURI(keyURI))).on("finish", resolve);
-            })
+            await downloadFile(keyURI, dest + "Data/" + getFilenameFromURI(keyURI), options)
             m3uData.properties["EXT-X-KEY"] = m3uData.properties["EXT-X-KEY"].replace(keyURI, dest + "Data/" + getFilenameFromURI(keyURI));
 
         } else {
@@ -126,7 +158,7 @@ async function downloadVideoFromM3U(url, dest, options) {
                 const filename = getFilenameFromURI(value.properties.uri);
                 const uri = value.properties.uri;
                 value.properties.uri = dest + "Data/" + filename;
-                downloadFile(uri, dest + "Data/" + filename).then(callback, callback)
+                downloadFile(uri, dest + "Data/" + filename, options).then(callback, callback)
 
             }, err => {
                 if (err) {

@@ -111,6 +111,15 @@ const run = async () => {
       help: "Don't download. Show list of available subtitle languages.",
     }
   );
+  download.addArgument(
+    ["--maxAttempts"],
+    {
+      action: "store",
+      type: "int",
+      help: "Max number of download attempts before aborting. (Default: 5)",
+      metavar: "N"
+    }
+  );
   const args = parser.parseArgs();
 
   if (args.subcommand_name == "login") {
