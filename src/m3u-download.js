@@ -1,8 +1,14 @@
-const { UserInputException, RuntimeException, NetworkException } = require("./Exceptions");
+const {
+    UserInputException,
+    RuntimeException,
+    NetworkException
+} = require("./Exceptions");
 const rp = require("request-promise-native");
 const request = require("request");
-var async = require("async");
-var fs = require("fs");
+const fs = require("fs");
+const _cliProgress = require('cli-progress');
+const ListDownloader = require("./ListDownloader");
+const prettyBytes = require('pretty-bytes');
 /*
 
 function makeIterator(array) {
@@ -82,7 +88,10 @@ async function downloadFile(uri, dest, options) {
     for (let attempt = 0; attempt < options.maxAttempts; attempt++) {
         try {
             await new Promise((resolve, reject) => {
-                request(uri, { forever: true, timeout: 20000 }).on("error", (e) => {
+                request(uri, {
+                    forever: true,
+                    timeout: 20000
+                }).on("error", (e) => {
                     reject(new NetworkException(e.message));
                 }).on("response", (response) => {
                     if (response.statusCode != 200) {
@@ -107,7 +116,10 @@ async function downloadString(uri, options) {
     for (let attempt = 0; attempt < options.maxAttempts; attempt++) {
         try {
             return await new Promise((resolve, reject) => {
-                request(uri, { forever: true, timeout: 20000 }, (error, response, body) => {
+                request(uri, {
+                    forever: true,
+                    timeout: 20000
+                }, (error, response, body) => {
                     if (error) {
                         reject(new NetworkException(e.message));
                         return;
@@ -142,7 +154,9 @@ async function downloadVideoFromM3U(url, dest, options) {
     if (m3uData.items.StreamItem.length > 0) { // Stream List
         await downloadVideoFromM3U(m3uData.items.StreamItem[0].properties.uri, dest, options)
     } else {
-        try { fs.mkdirSync(dest + "Data/") } catch (e) { }
+        try {
+            fs.mkdirSync(dest + "Data/")
+        } catch (e) {}
         if (m3uData.properties["EXT-X-KEY"]) {
             const keyURIMatch = m3uData.properties["EXT-X-KEY"].match(/URI="([^"]+)"/)
             if (!keyURIMatch) throw new RuntimeException("No key URI found")
@@ -154,8 +168,42 @@ async function downloadVideoFromM3U(url, dest, options) {
         } else {
             throw new RuntimeException("No key found. This should never happen")
         }
+        const downloadList = [];
+        for (const item of m3uData.items.PlaylistItem) {
+            const filename = getFilenameFromURI(item.properties.uri);
+            const uri = item.properties.uri;
+            item.properties.uri = dest + "Data/" + filename;
+            downloadList.push({
+                url: uri,
+                dest: dest + "Data/" + filename
+            })
+        }
+        const listDownloader = new ListDownloader(downloadList, options);
+        const downloadPromise = listDownloader.startDownload();
+        if (true || options.showProgressBar) {
+            const bar1 = new _cliProgress.Bar({
+                format: 'downloading [{bar}] {percentage}% | {downSize}/{estSize} | Speed: {speed}/s | ETA: {myEta}s'
+            }, _cliProgress.Presets.shades_classic);
+            bar1.start(1, 0);
+            listDownloader.on("update", (data) => {
 
-        await new Promise((resolve, reject) => {
+                bar1.setTotal(data.estimatedSize);
+                bar1.update(data.downloadedSize, {
+                    downSize: prettyBytes(data.downloadedSize),
+                    estSize: prettyBytes(data.estimatedSize),
+                    speed: prettyBytes(data.speed),
+                    myEta: Math.floor((data.estimatedSize - data.downloadedSize) / data.speed)
+                });
+            })
+            listDownloader.on("finish", () => {
+                bar1.stop();
+            })
+            listDownloader.on("error", () => {
+                bar1.stop();
+            })
+        }
+        await downloadPromise;
+        /*await new Promise((resolve, reject) => {
             console.log(options.connections)
             async.forEachOfLimit(m3uData.items.PlaylistItem, options.connections, (value, key, callback) => {
                 if (key % 10 == 0) { console.log((key + 1) + "/" + m3uData.items.PlaylistItem.length) }
@@ -172,10 +220,9 @@ async function downloadVideoFromM3U(url, dest, options) {
                 }
                 resolve();
             });
-        })
+    })*/
 
         fs.writeFileSync(dest + ".m3u8", m3uData.toString())
-
 
     }
 }

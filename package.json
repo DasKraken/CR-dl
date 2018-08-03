@@ -11,9 +11,11 @@
   "dependencies": {
     "argparse": "^1.0.10",
     "async": "^2.6.0",
+    "cli-progress": "^2.0.0",
     "crunchyroll-lib": "^1.0.11",
     "langs": "^2.0.0",
     "m3u8": "git+https://git@github.com/tedconf/node-m3u8.git",
+    "pretty-bytes": "^5.1.0",
     "request": "^2.85.0",
     "request-promise-native": "^1.0.5"
   }
