@@ -319,7 +319,7 @@ async function downloadVideoUrl(url, resolution, options) {
     const outputFileName = outputDirectory + toFilename(metadata.seasonTitle) + " - " + toFilename(metadata.episodeNumber) + " - " + toFilename(metadata.episodeTitle) + " [" + resolution + "]" + ".mkv"
 
     await downloadVideoFromM3U(media.getStream().getFile(), "VodVid", options)
-    await processVideo("VodVid.m3u8", metadata, subsToInclude, outputFileName)
+    await processVideo("VodVid.m3u8", metadata, subsToInclude, outputFileName, options)
     saveCookieJar();
     cleanUp();
 }

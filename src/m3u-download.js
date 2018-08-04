@@ -180,7 +180,7 @@ async function downloadVideoFromM3U(url, dest, options) {
         }
         const listDownloader = new ListDownloader(downloadList, options);
         const downloadPromise = listDownloader.startDownload();
-        if (true || options.showProgressBar) {
+        if (options.showProgressBar) {
             const bar1 = new _cliProgress.Bar({
                 format: 'downloading [{bar}] {percentage}% | {downSize}/{estSize} | Speed: {speed}/s | ETA: {myEta}s'
             }, _cliProgress.Presets.shades_classic);
@@ -201,27 +201,22 @@ async function downloadVideoFromM3U(url, dest, options) {
             listDownloader.on("error", () => {
                 bar1.stop();
             })
-        }
-        await downloadPromise;
-        /*await new Promise((resolve, reject) => {
-            console.log(options.connections)
-            async.forEachOfLimit(m3uData.items.PlaylistItem, options.connections, (value, key, callback) => {
-                if (key % 10 == 0) { console.log((key + 1) + "/" + m3uData.items.PlaylistItem.length) }
-                const filename = getFilenameFromURI(value.properties.uri);
-                const uri = value.properties.uri;
-                value.properties.uri = dest + "Data/" + filename;
-                downloadFile(uri, dest + "Data/" + filename, options).then(callback, callback)
-
-            }, err => {
-                if (err) {
-                    options.abort = true;
-                    reject(err);
-                    return;
+        } else {
+            let lastPercent = 0;
+            listDownloader.on("update", (data) => {
+                const curPercent = Math.floor(data.downloadedSize / data.estimatedSize * 100);
+                if (curPercent > lastPercent) {
+                    const downSize = prettyBytes(data.downloadedSize)
+                    const estSize = prettyBytes(data.estimatedSize)
+                    const speed = prettyBytes(data.speed)
+                    const myEta = Math.floor((data.estimatedSize - data.downloadedSize) / data.speed)
+                    console.log(`downloading ${curPercent}% | ${downSize}/${estSize} | Speed: ${speed}/s | ETA: ${myEta}s`)
+                    lastPercent = curPercent;
                 }
-                resolve();
-            });
-    })*/
+            })
+        }
 
+        await downloadPromise;
         fs.writeFileSync(dest + ".m3u8", m3uData.toString())
 
     }

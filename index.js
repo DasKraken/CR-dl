@@ -120,8 +120,16 @@ const run = async () => {
       metavar: "N"
     }
   );
+  download.addArgument(
+    ["--hideProgressBar"],
+    {
+      action: "storeTrue",
+      help: "Hide progress bar.",
+    }
+  );
   const args = parser.parseArgs();
 
+  args.showProgressBar = !args.hideProgressBar;
   if (args.subcommand_name == "login") {
     await CrDl.login(args.username, args.password);
 
