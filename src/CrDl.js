@@ -1,12 +1,24 @@
 const request = require('request');
-const { NodeHttpClient, setCookieJar } = require("./NodeHttpClient");
-const { UserInputException, RuntimeException, NetworkException } = require("./Exceptions");
+const {
+    NodeHttpClient,
+    setCookieJar
+} = require("./NodeHttpClient");
+const {
+    UserInputException,
+    RuntimeException,
+    NetworkException
+} = require("./Exceptions");
 const SubtitleToAss = require("./SubtitleToAss");
 const downloadVideoFromM3U = require("./m3u-download");
 const processVideo = require("./processVideo");
-const { getMedia, setHttpClient } = require("crunchyroll-lib/index");
+const {
+    getMedia,
+    setHttpClient
+} = require("crunchyroll-lib/index");
 const fs = require("fs");
 const langs = require('langs');
+const format = require('string-format')
+const mkdirp = require('mkdirp');
 
 let jar = request.jar()
 setCookieJar(jar);
@@ -47,6 +59,7 @@ function loadCookieJar() {
         jar._jar._importCookiesSync(JSON.parse(fs.readFileSync("cookies.data")));
     }
 }
+
 function saveCookieJar() {
     fs.writeFileSync("cookies.data", JSON.stringify(jar._jar.serializeSync()));
 }
@@ -58,13 +71,13 @@ function toFilename(str) {
 function cleanUp() {
     try {
         deleteFolderRecursive("SubData");
-    } catch (e) { };
+    } catch (e) {};
     try {
         deleteFolderRecursive("VodVidData");
-    } catch (e) { };
+    } catch (e) {};
     try {
         fs.unlinkSync("VodVid.m3u8")
-    } catch (e) { };
+    } catch (e) {};
 }
 
 async function isLoggedIn() {
@@ -105,7 +118,7 @@ async function login(username, password) {
             'name': username,
             'password': password
         });
-    } catch (e) { }
+    } catch (e) {}
 
     if (await isLoggedIn()) {
         console.log("Login successful");
@@ -136,7 +149,10 @@ async function getVideoData(url) {
 
     const seasonTitle = seasonTitleMatch ? JSON.parse(seasonTitleMatch[1]) : undefined;
 
-    return { supportedResolutions, seasonTitle };
+    return {
+        supportedResolutions,
+        seasonTitle
+    };
 }
 
 async function getMaxWantedResolution(videoData, res) {
@@ -165,18 +181,31 @@ async function downloadPlaylistUrl(url, resolution, onlySeason, options) {
     let list = [];
     let seasonNum = -1;
     let page;
-    try { page = (await httpClientInstance.get(url)).body; } catch (e) { console.log("Error " + e.status) }
+    try {
+        page = (await httpClientInstance.get(url)).body;
+    } catch (e) {
+        console.log("Error " + e.status)
+    }
     const regex = /(?:<a href="([^"]+)" title="([^"]+)"\s+class="portrait-element block-link titlefix episode">)|(?:<a href="#"\s+class="season-dropdown content-menu block text-link strong (?:open)? small-margin-bottom"\s+title="([^"]+)">[^<]+<\/a>)/gm;
     let m;
-    list[0] = { name: "", episodes: [] }
+    list[0] = {
+        name: "",
+        episodes: []
+    }
     while ((m = regex.exec(page)) !== null) {
         if (m[3]) {
             if (seasonNum != -1) list[seasonNum].episodes = list[seasonNum].episodes.reverse();
             seasonNum++;
-            list[seasonNum] = { name: m[3], episodes: [] };
+            list[seasonNum] = {
+                name: m[3],
+                episodes: []
+            };
         } else {
             if (seasonNum == -1) seasonNum = 0;
-            list[seasonNum].episodes.push({ url: m[1], name: m[2] });
+            list[seasonNum].episodes.push({
+                url: m[1],
+                name: m[2]
+            });
         }
     }
     if (seasonNum != -1) list[seasonNum].episodes = list[seasonNum].episodes.reverse();
@@ -209,7 +238,9 @@ async function downloadPlaylistUrl(url, resolution, onlySeason, options) {
 }
 
 async function downloadsSubs(subtitles) {
-    try { fs.mkdirSync("SubData") } catch (e) { }
+    try {
+        fs.mkdirSync("SubData")
+    } catch (e) {}
     const subsAvailiable = [];
     for (let i = 0; i < subtitles.length; i++) {
         const stta = new SubtitleToAss(subtitles[i]);
@@ -231,7 +262,7 @@ async function downloadsSubs(subtitles) {
     return subsAvailiable;
 }
 
-const possibleSubValues = ["enUS", "esLA", "esES", "frFR", "ptBR", "arME", "itIT", "deDE", "ruRU",]
+const possibleSubValues = ["enUS", "esLA", "esES", "frFR", "ptBR", "arME", "itIT", "deDE", "ruRU", ]
 async function verifySubList(list) {
     for (const lang of list) {
         if (possibleSubValues.indexOf(lang) == -1) {
@@ -271,7 +302,9 @@ async function downloadVideoUrl(url, resolution, options) {
             options.subDefault = langs[0];
         }
         for (const lang of langs) {
-            const sub = subsAvailiable.find((v) => { return v.langCode == lang });
+            const sub = subsAvailiable.find((v) => {
+                return v.langCode == lang
+            });
             if (!sub) {
                 console.error("Subtitles for " + lang + " not available. Skipping...");
             } else {
@@ -312,16 +345,29 @@ async function downloadVideoUrl(url, resolution, options) {
         metadata.episodeNumber = pad(metadata.episodeNumber, 2)
     }
 
-    const outputDirectory = toFilename(metadata.seasonTitle) + " [" + resolution + "]/";
-    try {
-        fs.mkdirSync(outputDirectory);
-    } catch (e) { }
-    const outputFileName = outputDirectory + toFilename(metadata.seasonTitle) + " - " + toFilename(metadata.episodeNumber) + " - " + toFilename(metadata.episodeTitle) + " [" + resolution + "]" + ".mkv"
+    const formatData = {};
+    for (const prop in metadata) {
+        formatData[prop] = toFilename(metadata[prop]);
+    }
 
+    options.output = options.output || "{seasonTitle} [{resolution}]/{seasonTitle} - {episodeNumber} - {episodeTitle} [{resolution}].mkv"
+    const outputPath = format(options.output, formatData)
+
+    const outputDirectory = outputPath.substring(0, outputPath.lastIndexOf("/"));
+    if (outputDirectory.length > 0) {
+        mkdirp.sync(outputDirectory);
+    }
     await downloadVideoFromM3U(media.getStream().getFile(), "VodVid", options)
-    await processVideo("VodVid.m3u8", metadata, subsToInclude, outputFileName, options)
+    await processVideo("VodVid.m3u8", metadata, subsToInclude, outputPath, options)
     saveCookieJar();
     cleanUp();
 }
 
-module.exports = { downloadVideoUrl, downloadPlaylistUrl, login, logout, cleanUp, isLoggedIn }
+module.exports = {
+    downloadVideoUrl,
+    downloadPlaylistUrl,
+    login,
+    logout,
+    cleanUp,
+    isLoggedIn
+}

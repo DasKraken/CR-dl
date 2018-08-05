@@ -15,8 +15,10 @@
     "crunchyroll-lib": "^1.0.11",
     "langs": "^2.0.0",
     "m3u8": "git+https://git@github.com/tedconf/node-m3u8.git",
+    "mkdirp": "^0.5.1",
     "pretty-bytes": "^5.1.0",
     "request": "^2.85.0",
-    "request-promise-native": "^1.0.5"
+    "request-promise-native": "^1.0.5",
+    "string-format": "^2.0.0"
   }
 }
