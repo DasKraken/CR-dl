@@ -60,6 +60,7 @@ async function downloadVideoFromM3U(url, dest, options) {
 
 
 var m3u8 = require('m3u8');
+require('m3u8/m3u/AttributeList').dataTypes["frame-rate"] = "decimal-floating-point";
 
 function parseM3U(data) {
     return new Promise((resolve, reject) => {
