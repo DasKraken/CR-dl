@@ -30,7 +30,6 @@ const httpClientInstance = new NodeHttpClient();
 
 format = format.create({
     scene: s => {
-        console.log(s)
         s = removeDiacritics(s);
         s = s.replace(/[^A-Za-z0-9\._-]/g, ".");
         s = s.replace(/\.{2,}/g, ".");
@@ -39,7 +38,6 @@ format = format.create({
         s = s.replace(/[._-]{2,}/g, ".");
         s = s.replace(/^[._-]/, "");
         s = s.replace(/[._-]$/, "");
-        console.log(s)
         return s;
     },
 })
@@ -394,8 +392,6 @@ async function downloadVideoUrl(url, resolution, options) {
     if (outputDirectory.length > 0) {
         mkdirp.sync(outputDirectory);
     }
-    console.log(media.getStream().getFile())
-    return
     await downloadVideoFromM3U(media.getStream().getFile(), "VodVid", options)
     await processVideo("VodVid.m3u8", metadata, subsToInclude, outputPath, options)
     saveCookieJar();
