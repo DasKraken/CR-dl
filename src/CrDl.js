@@ -17,8 +17,9 @@ const {
 } = require("crunchyroll-lib/index");
 const fs = require("fs");
 const langs = require('langs');
-const format = require('string-format')
+let format = require('string-format')
 const mkdirp = require('mkdirp');
+const removeDiacritics = require('diacritics').remove;
 
 let jar = request.jar()
 setCookieJar(jar);
@@ -26,6 +27,22 @@ setCookieJar(jar);
 // Set the Http client to Node
 setHttpClient(NodeHttpClient);
 const httpClientInstance = new NodeHttpClient();
+
+format = format.create({
+    scene: s => {
+        console.log(s)
+        s = removeDiacritics(s);
+        s = s.replace(/[^A-Za-z0-9\._-]/g, ".");
+        s = s.replace(/\.{2,}/g, ".");
+        s = s.replace(/-{2,}/g, "-");
+        s = s.replace(/_{2,}/g, "_");
+        s = s.replace(/[._-]{2,}/g, ".");
+        s = s.replace(/^[._-]/, "");
+        s = s.replace(/[._-]$/, "");
+        console.log(s)
+        return s;
+    },
+})
 
 const resolutionOrder = [
     "360p",
@@ -132,7 +149,27 @@ async function logout() {
     setCookieJar(jar);
     saveCookieJar();
 }
+async function getLang() {
+    let res = await httpClientInstance.get("http://www.crunchyroll.com/videos/anime");
+    return res.body.match(/<li><a href="#" onclick="return Localization\.SetLang\(&quot;([A-Za-z]{4})&quot;\);" data-language="[^"]+" class="selected">[^"]+<\/a><\/li>/)[1]
+}
+async function setLang(lang) {
+    loadCookieJar();
+    try {
+        const loginReq = await httpClientInstance.post("http://www.crunchyroll.com/ajax/", {
+            'req': 'RpcApiTranslation_SetLang',
+            'locale': lang,
+        });
+    } catch (e) {}
 
+    let newLang = await getLang();
+    if (newLang == lang) {
+        console.log("Language changed to " + lang);
+    } else {
+        throw new RuntimeException("Couldn't change language. Currently selected: " + newLang)
+    }
+    saveCookieJar();
+}
 async function getVideoData(url) {
     const page = (await httpClientInstance.get(url)).body;
 
@@ -357,6 +394,8 @@ async function downloadVideoUrl(url, resolution, options) {
     if (outputDirectory.length > 0) {
         mkdirp.sync(outputDirectory);
     }
+    console.log(media.getStream().getFile())
+    return
     await downloadVideoFromM3U(media.getStream().getFile(), "VodVid", options)
     await processVideo("VodVid.m3u8", metadata, subsToInclude, outputPath, options)
     saveCookieJar();
@@ -369,5 +408,7 @@ module.exports = {
     login,
     logout,
     cleanUp,
-    isLoggedIn
+    isLoggedIn,
+    setLang,
+    getLang
 }

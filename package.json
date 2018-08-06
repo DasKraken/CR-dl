@@ -13,6 +13,7 @@
     "async": "^2.6.0",
     "cli-progress": "^2.0.0",
     "crunchyroll-lib": "^1.0.11",
+    "diacritics": "^1.3.0",
     "langs": "^2.0.0",
     "m3u8": "git+https://git@github.com/tedconf/node-m3u8.git",
     "mkdirp": "^0.5.1",

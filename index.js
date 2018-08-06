@@ -53,6 +53,18 @@ const run = async () => {
       help: "Password on CR",
     }
   );
+  const lang = subparsers.addParser("language", {
+    aliases: ["lang"],
+    addHelp: true,
+    description: "Set the language of CR and metadata. (Note 1: It doesn't change default subtitle language. Note 2: Videos that aren't available in selected language may not work). Available options are: enUS, enGB, esLA, esES, ptBR, ptPT, frFR, deDE, arME, itIT, ruRU"
+  });
+  lang.addArgument(
+    ["lang"], {
+      action: "store",
+      type: "string",
+      help: "Language to use",
+    }
+  );
   const logout = subparsers.addParser("logout", {
     addHelp: true,
     description: "Logs out of CR."
@@ -154,8 +166,16 @@ const run = async () => {
     } else {
       await CrDl.downloadPlaylistUrl(args.url, args.resolution, args.seasonNumber, args);
     }
+  } else if (args.subcommand_name == "language" || args.subcommand_name == "lang") {
+    const possibleSubValues = ["enUS", "enGB", "esLA", "esES", "ptBR", "ptPT", "frFR", "deDE", "arME", "itIT", "ruRU", ]
+    if (possibleSubValues.indexOf(args.lang) > -1) {
+      await CrDl.setLang(args.lang);
+    } else {
+      console.log(`Unsupported language ${args.lang}. Supported languages are: ${possibleSubValues.join(", ")}`);
+    }
+
   } else {
-    console.error("unknown command: " + command)
+    console.error("unknown command: " + args.subcommand_name)
   }
 }
 run(process.argv)
