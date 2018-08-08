@@ -71,8 +71,43 @@ var deleteFolderRecursive = function (path) {
 
 function loadCookieJar() {
     if (fs.existsSync("cookies.data")) {
-        jar._jar._importCookiesSync(JSON.parse(fs.readFileSync("cookies.data")));
+        const fileData = fs.readFileSync("cookies.data")+"";
+        if (fileData.charAt(0) == "{") {
+            jar._jar._importCookiesSync(JSON.parse(fileData));
+        } else {
+            loadAltCookies(fileData);
+        }
     }
+}
+
+function loadAltCookies(c) {
+    const out = {
+        "version": "tough-cookie@2.3.4",
+        "storeType": "MemoryCookieStore",
+        "rejectPublicSuffixes": true,
+        "cookies": []
+    }
+    const now = (new Date()).toISOString();
+    const inMonth = (new Date(Date.now() + 2592000000)).toISOString();
+    const cooks = c.split(/; */);
+    for (let i = 0; i < cooks.length; i++) {
+        const o = cooks[i];
+        const key = o.substring(0, o.indexOf('='))
+        const value = o.substring(o.indexOf('=') + 1)
+        out.cookies.push({
+            key: key,
+            value: value,
+            domain: "crunchyroll.com",
+            path: "/",
+            hostOnly: false,
+            creation: now,
+            lastAccessed: now,
+            expires: inMonth,
+            maxAge: 2592000
+        })
+    }
+    jar._jar._importCookiesSync(out);
+    saveCookieJar();
 }
 
 function saveCookieJar() {
