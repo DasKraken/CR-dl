@@ -2,6 +2,12 @@ const CrDl = require("./src/CrDl");
 const {
   spawn
 } = require('child_process');
+const {
+  UserInputException,
+  RuntimeException,
+  NetworkException
+} = require("./src/Exceptions");
+
 
 function verifyFfmpeg() {
   return new Promise((resolve, reject) => {
@@ -183,7 +189,11 @@ run(process.argv)
     console.log("Cleanup..");
     CrDl.cleanUp();
   }, (err) => {
-    console.error(err)
+    if (err instanceof UserInputException) {
+      console.log(err.message)
+    } else {
+      console.log(err)
+    }
     console.log("Cleanup..");
     CrDl.cleanUp();
   });
