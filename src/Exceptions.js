@@ -14,4 +14,8 @@ class NetworkException extends CrDlException {
 }
 NetworkException.prototype.name = "NetworkException";
 
-module.exports = { UserInputException, RuntimeException, NetworkException }
+class CloudflareException extends CrDlException {
+}
+CloudflareException.prototype.name = "CloudflareException";
+
+module.exports = { UserInputException, RuntimeException, NetworkException, CloudflareException }

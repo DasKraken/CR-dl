@@ -42,17 +42,16 @@ class NodeHttpClient {
     method(method, url, body, options) {
         //console.log(url)
         return new Promise((resolve, reject) => {
-            request({
-                'method': method,
-                'uri': url,
-                'body': processBody(body),
-                'jar': jar,
-                "headers": {
-                    "Content-Type" : "application/x-www-form-urlencoded",
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:59.0) Gecko/20100101 Firefox/59.0",
-                    "Accept-Language": "*"
-                }
-            }, (err, response) => {
+            options = options || {};
+            options["method"] = method;
+            options["uri"] = url;
+            options["body"] = processBody(body);
+            options["jar"] = jar;
+            options["headers"] = options["headers"] || {};
+            options.headers["User-Agent"] = options.headers["User-Agent"] || "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:61.0) Gecko/20100101 Firefox/61.0";
+            options.headers["Accept-Language"] = options.headers["Accept-Language"] || "*";
+            if (body) options.headers["Content-Type"] = "application/x-www-form-urlencoded";
+            request(options, (err, response) => {
                 if (err) {
                     reject(err);
                 } else {
@@ -70,4 +69,7 @@ class NodeHttpClient {
 }
 
 
-module.exports = { NodeHttpClient, setCookieJar }
+module.exports = {
+    NodeHttpClient,
+    setCookieJar
+}

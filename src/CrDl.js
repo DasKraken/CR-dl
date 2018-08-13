@@ -3,6 +3,7 @@ const {
     NodeHttpClient,
     setCookieJar
 } = require("./NodeHttpClient");
+const CloudflareBypass = require("./CloudflareBypass");
 const {
     UserInputException,
     RuntimeException,
@@ -27,6 +28,7 @@ setCookieJar(jar);
 // Set the Http client to Node
 setHttpClient(NodeHttpClient);
 const httpClientInstance = new NodeHttpClient();
+const cloudflareBypass = new CloudflareBypass(httpClientInstance);
 
 format = format.create({
     scene: s => {
@@ -71,7 +73,7 @@ var deleteFolderRecursive = function (path) {
 
 function loadCookieJar() {
     if (fs.existsSync("cookies.data")) {
-        const fileData = fs.readFileSync("cookies.data")+"";
+        const fileData = fs.readFileSync("cookies.data") + "";
         if (fileData.charAt(0) == "{") {
             jar._jar._importCookiesSync(JSON.parse(fileData));
         } else {
@@ -137,31 +139,44 @@ async function isLoggedIn() {
 
 async function login(username, password) {
     loadCookieJar();
-    /*const loginPage = (await httpClientInstance.get("https://www.crunchyroll.com/login"));
+    let loginPage;
+    try {
+        loginPage = await cloudflareBypass.get("https://www.crunchyroll.com/login", {
+            followRedirect: false
+        });
+    } catch (e) {
+        loginPage = e;
+    }
     if (loginPage.status == 302) {
-      console.log("Already logged in!")
-      return;
+        console.log("Already logged in!")
+        return;
     }
     const loginTokenMatch = /name="login_form\[_token\]" value="([^"]+)" \/>/.exec(loginPage.body)
     if (!loginTokenMatch) {
-      throw new Error("Error logging in: No login token found.");
+        throw new Error("Error logging in: No login token found.");
     }
     const token = loginTokenMatch[1];
-  
-    const loginSend = (await httpClientInstance.post("https://www.crunchyroll.com/login", {
-      "login_form[_token]": token,
-      "login_form[name]": username,
-      "login_form[password]": password,
-      "login_form[redirect_url]": "/"
-    }));
-    if (loginPage.status == 302) {
-      console.log("Login successful");
-      return;
-    } else {
-      throw new Error("Couldn't log in. Wrong credentials?");
-    }*/
 
+    let loginSend;
     try {
+        loginSend = (await cloudflareBypass.post("https://www.crunchyroll.com/login", {
+            "login_form[_token]": token,
+            "login_form[name]": username,
+            "login_form[password]": password,
+            "login_form[redirect_url]": "/"
+        }));
+    } catch (e) {
+        loginSend = e;
+    }
+    saveCookieJar();
+    if (loginSend.status == 302 && await isLoggedIn()) {
+        console.log("Login successful");
+        return;
+    } else {
+        throw new UserInputException("Couldn't log in. Wrong credentials?");
+    }
+
+    /*try {
         const loginReq = await httpClientInstance.post("https://www.crunchyroll.com/?a=formhandler", {
             'formname': 'RpcApiUser_Login',
             'next_url': 'https://www.crunchyroll.com/acct/membership',
@@ -174,12 +189,12 @@ async function login(username, password) {
         console.log("Login successful");
     } else {
         throw new UserInputException("Couldn't log in. Wrong credentials?")
-    }
-    saveCookieJar();
+    }*/
+
 }
 async function logout() {
-    jar = request.jar()
-    setCookieJar(jar);
+    loadCookieJar();
+    await cloudflareBypass.get("http://www.crunchyroll.com/logout");
     saveCookieJar();
 }
 async function getLang() {
