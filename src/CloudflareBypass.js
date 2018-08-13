@@ -32,7 +32,7 @@ class CloudflareBypass {
         } catch (response) {
 
             if (this.hasCfChallange(response.body)) {
-                console.log("Cloudflare challenge detected. Trying to bypass...")
+                console.log("Cloudflare challenge detected. Trying to solve...")
                 const urlo = new URL(url)
                 let submitUrl = `${urlo.protocol}//${urlo.host}/cdn-cgi/l/chk_jschl`
                 const formData = {};

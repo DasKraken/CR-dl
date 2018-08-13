@@ -5,7 +5,8 @@ const {
 const {
   UserInputException,
   RuntimeException,
-  NetworkException
+  NetworkException,
+  CloudflareException
 } = require("./src/Exceptions");
 
 
@@ -191,6 +192,8 @@ run(process.argv)
   }, (err) => {
     if (err instanceof UserInputException) {
       console.log(err.message)
+    } else if (err instanceof CloudflareException) {
+      console.log("Couldn't bypass Cloudflare protection: " + err.message)
     } else {
       console.log(err)
     }
