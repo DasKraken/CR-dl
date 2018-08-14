@@ -1,29 +1,40 @@
 # CR-dl
+*Read this in other language*: [Deutsch](README.de.md)
 
 CR-dl is a tool to quickly download anime from [Crunchyroll](http://www.crunchyroll.com/)
 
 ## Installation
 
-CR-dl requires [node.js](https://nodejs.org), [ffmpeg](https://www.ffmpeg.org) and [git](https://git-scm.com/) to be installed on the system and available in PATH
+Windows users can get a Windows bundle from the [Releases Page](https://github.com/DasKraken/CR-dl/releases).
 
-After these are installed, enter project directory and run
 
-    npm install
+### Without using the bundle:
 
+CR-dl requires [node.js (v10)](https://nodejs.org) and [ffmpeg](https://www.ffmpeg.org) to be installed on the system and available in PATH
+
+After these are installed run:
+
+    npm install -g https://github.com/DasKraken/CR-dl.git
+
+now you can run it with ```cr-dl```
 
 ## Usage
-CR-dl is a CLI-Tool and can only be run from the terminal. Following commands are available:
+CR-dl is a CLI-Tool and can only be run from the terminal. 
+
+*Note:* If you use the Windows bundle with Powershell, instead of calling ```cr-dl```, you have to write it out: ```.\cr-dl.exe``` .
+
+Following commands are available:
 
 
 Logging in into Crunchyroll to be able accessing premium content (This will create a file 'cookies.data' to store the session):
 ```
-node index.js login <username> <password>
+cr-dl login <username> <password>
 ```
 
 
 Logging out:
 ```
-node index.js logout
+cr-dl logout
 ```
 
 Changing the language of Crunchyroll. This will change the language of the metadata for file naming. 
@@ -31,13 +42,13 @@ Note 1: This wont change the default subtitle language.
 Note 2: Series that aren't available in selected language may not work.
 Allowed are: enUS, enGB, esLA, esES, ptBR, ptPT, frFR, deDE, arME, itIT, ruRU
 ```
-node index.js language LANG
+cr-dl language LANG
 ```
 
 
 Downloading a video from URL. A resolution can be provided optionally (360p, 480p, 720p, 1080p):
 ```
-node index.js download <URL> [resolution]
+cr-dl download <URL> [resolution]
 ```
 
 
@@ -49,7 +60,7 @@ node index.js download <URL> [resolution]
 
 Downloading only one season of a series from URL. This will download only the videos of the given season number:
 ```
-node index.js download <URL> <resolution> <seasonNumber>
+cr-dl download <URL> <resolution> <seasonNumber>
 ```
 
 ### Optional arguments:
@@ -96,39 +107,50 @@ Allowed names are:
 Additionally you can append **!scene** to the name e.g. ```{seasonTitle!scene}``` to make it a dot separated title as used in Scene releases.
 E.g. **"Food Wars! Shokugeki no Sōma" => "Food.Wars.Shokugeki.no.Soma"**
 
+### Template examples:
+Name it like a scene release:
+
+    -o "{seasonTitle!scene}.{resolution}.WEB.x264-byME/{seasonTitle!scene}.E{episodeNumber}.{resolution}.WEB.x264-byME.mkv"
+
+Name it like a Fansub:
+
+    -o "[MySubs] {seasonTitle} - {episodeNumber} [{resolution}].mkv"
+
 ## Examples
+
+Log in as user "MyName" with password "Pass123":
 ```
-node index.js login "MyName" "Pass123"
+cr-dl login "MyName" "Pass123"
 ```
-Will log you in as user "MyName" with password "Pass123"
+
+Download episode 4 of HINAMATSURI:
+```
+cr-dl download http://www.crunchyroll.com/hinamatsuri/episode-4-disownment-rock-n-roll-fever-769303"
+```
 
 
+Download all episodes of HINAMATSURI in 720p using 10 simultaneous connections, and will set the default subtitle language to enUS:
 ```
-node index.js download http://www.crunchyroll.com/hinamatsuri/episode-4-disownment-rock-n-roll-fever-769303"
+cr-dl download -c 10 -l enUS http://www.crunchyroll.com/hinamatsuri 720p
 ```
-Will download episode 4 of HINAMATSURI
 
 
+Download only the second season of Food Wars in 1080p:
 ```
-node index.js download -c 10 -l enUS http://www.crunchyroll.com/hinamatsuri 720p
+cr-dl download http://www.crunchyroll.com/food-wars-shokugeki-no-soma 1080p 2
 ```
-Will download all episodes of HINAMATSURI in 720p using 10 simultaneous connections, and will set the default subtitle language to enUS.
 
 
+Download video and add only german and english subs to container with german as default:
 ```
-node index.js download http://www.crunchyroll.com/food-wars-shokugeki-no-soma 1080p 2
+cr-dl download --subLangs deDE,enUS URL
 ```
-Will download only the second season of Food Wars in 1080p
 
+Download video and name it like a scene release:
 ```
-node index.js download --subLangs deDE,enUS URL
+cr-dl download -o "{seasonTitle!scene}.{resolution}.WEB.x264-byME/{seasonTitle!scene}.E{episodeNumber}.{resolution}.WEB.x264-byME.mkv" URL
 ```
-Will download video and add only german and english subs to container with german as default.
 
-```
-node index.js download -o "{seasonTitle!scene}.{resolution}.WEB.x264-byME/{seasonTitle!scene}.E{episodeNumber}.{resolution}.WEB.x264-byME.mkv" URL
-```
-Will download video and name it like a scene release
 
 
 ## License
