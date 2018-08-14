@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const CrDl = require("./src/CrDl");
 const {
   spawn

@@ -1,13 +1,16 @@
 {
   "name": "cr-dl",
-  "version": "1.0.0",
+  "version": "2.1.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/CrDl.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
+  "bin": {
+    "cr-dl": "./index.js"
+  },
   "dependencies": {
     "argparse": "^1.0.10",
     "async": "^2.6.0",
