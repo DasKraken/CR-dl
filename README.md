@@ -1,18 +1,18 @@
 # CR-dl
 
-DR-dl is a tool to quickly download anime from [Crunchyroll](http://www.crunchyroll.com/)
+CR-dl is a tool to quickly download anime from [Crunchyroll](http://www.crunchyroll.com/)
 
 ## Installation
 
 CR-dl requires [node.js](https://nodejs.org), [ffmpeg](https://www.ffmpeg.org) and [git](https://git-scm.com/) to be installed on the system and available in PATH
 
-To setup, enter project directory and run
-```
-npm install
-```
+After these are installed, enter project directory and run
+
+    npm install
+
 
 ## Usage
-CR-dl is a CLI-Tool and can only be run from the terminal
+CR-dl is a CLI-Tool and can only be run from the terminal. Following commands are available:
 
 
 Logging in into Crunchyroll to be able accessing premium content (This will create a file 'cookies.data' to store the session):
@@ -77,19 +77,24 @@ Hide progress bar.
 Output filename template, see the "OUTPUT TEMPLATE" for all the info
 
 ### OUTPUT TEMPLATE
-Output template is a string specified by a string with -o
-Default is "{seasonTitle} [{resolution}]/{seasonTitle} - {episodeNumber} - {episodeTitle} [{resolution}].mkv"
-Every {...} will be replaced with the value represented by given name. 
+Output template is a string specified with -o where every {...} will be replaced with the value represented by given name. 
+Default is ``` -o "{seasonTitle} [{resolution}]/{seasonTitle} - {episodeNumber} - {episodeTitle} [{resolution}].mkv" ```
 
 Allowed names are:
-**episodeTitle**: Title of the episode.
-**seriesTitle**: Title of the series. (seasonTitle should be preferred to differentiate seasons)
-**episodeNumber**: Episode number in two digits e.g. "02". Can also be a special episode e.g. "SP1"
-**seasonTitle**: Title of the season.
-**resolution**: Resolution of the video. E.g. 1080p
 
-Additionally you can append **!scene** to the name e.g. "{seasonTitle!scene} to make it a scene compatible title with dots as seperators.
-E.g. "Food Wars! Shokugeki no Sōma" => "Food.Wars.Shokugeki.no.Soma"
+**{episodeTitle}**: Title of the episode.
+
+**{seriesTitle}**: Title of the series. (seasonTitle should be preferred to differentiate seasons)
+
+**{episodeNumber}**: Episode number in two digits e.g. "02". Can also be a special episode e.g. "SP1"
+
+**{seasonTitle}**: Title of the season.
+
+**{resolution}**: Resolution of the video. E.g. 1080p
+
+
+Additionally you can append **!scene** to the name e.g. ```{seasonTitle!scene}``` to make it a dot separated title as used in Scene releases.
+E.g. **"Food Wars! Shokugeki no Sōma" => "Food.Wars.Shokugeki.no.Soma"**
 
 ## Examples
 ```
