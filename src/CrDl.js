@@ -13,7 +13,7 @@ const SubtitleToAss = require("./SubtitleToAss");
 const downloadVideoFromM3U = require("./m3u-download");
 const processVideo = require("./processVideo");
 const {
-    getMedia,
+    getMediaByUrl,
     setHttpClient
 } = require("crunchyroll-lib/index");
 const fs = require("fs");
@@ -369,7 +369,7 @@ async function downloadVideoUrl(url, resolution, options) {
     const videoData = await getVideoData(url);
     resolution = await getMaxWantedResolution(videoData, resolution)
 
-    const media = await getMedia(videoIdMatch[1], resolution, url);
+    const media = await getMediaByUrl(url, resolution);
 
     //media.
     const subtitles = media.getSubtitles();
