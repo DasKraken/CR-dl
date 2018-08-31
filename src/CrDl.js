@@ -1,3 +1,4 @@
+// @ts-check
 const request = require('request');
 const {
     NodeHttpClient,
@@ -13,9 +14,13 @@ const SubtitleToAss = require("./SubtitleToAss");
 const downloadVideoFromM3U = require("./m3u-download");
 const processVideo = require("./processVideo");
 const {
-    getMediaByUrl,
-    setHttpClient
-} = require("crunchyroll-lib/index");
+    MediaLegacyPlayer,
+    setHttpClientL
+} = require("./MediaLegacyPlayer");
+const {
+    MediaVilosPlayer,
+    setHttpClientV
+} = require("./MediaVilosPlayer");
 const fs = require("fs");
 const langs = require('langs');
 let format = require('string-format')
@@ -26,7 +31,9 @@ let jar = request.jar()
 setCookieJar(jar);
 
 // Set the Http client to Node
-setHttpClient(NodeHttpClient);
+setHttpClientL(NodeHttpClient);
+setHttpClientV(NodeHttpClient);
+
 const httpClientInstance = new NodeHttpClient();
 const cloudflareBypass = new CloudflareBypass(httpClientInstance);
 
@@ -44,12 +51,6 @@ format = format.create({
     },
 })
 
-const resolutionOrder = [
-    "360p",
-    "480p",
-    "720p",
-    "1080p"
-]
 
 function pad(num, size) {
     var s = num + "";
@@ -75,6 +76,7 @@ function loadCookieJar() {
     if (fs.existsSync("cookies.data")) {
         const fileData = fs.readFileSync("cookies.data") + "";
         if (fileData.charAt(0) == "{") {
+            // @ts-ignore
             jar._jar._importCookiesSync(JSON.parse(fileData));
         } else {
             loadAltCookies(fileData);
@@ -108,11 +110,13 @@ function loadAltCookies(c) {
             maxAge: 2592000
         })
     }
+    // @ts-ignore
     jar._jar._importCookiesSync(out);
     saveCookieJar();
 }
 
 function saveCookieJar() {
+    // @ts-ignore
     fs.writeFileSync("cookies.data", JSON.stringify(jar._jar.serializeSync()));
 }
 
@@ -123,13 +127,13 @@ function toFilename(str) {
 function cleanUp() {
     try {
         deleteFolderRecursive("SubData");
-    } catch (e) {};
+    } catch (e) { };
     try {
         deleteFolderRecursive("VodVidData");
-    } catch (e) {};
+    } catch (e) { };
     try {
         fs.unlinkSync("VodVid.m3u8")
-    } catch (e) {};
+    } catch (e) { };
 }
 
 async function isLoggedIn() {
@@ -208,7 +212,7 @@ async function setLang(lang) {
             'req': 'RpcApiTranslation_SetLang',
             'locale': lang,
         });
-    } catch (e) {}
+    } catch (e) { }
 
     let newLang = await getLang();
     if (newLang == lang) {
@@ -218,45 +222,24 @@ async function setLang(lang) {
     }
     saveCookieJar();
 }
-async function getVideoData(url) {
-    const page = (await httpClientInstance.get(url)).body;
 
-    const regexResolutions = /<a href="(?!\/freetrial)[^"]+" token="showmedia.([^"]+)" class="[^"]+" title="[^"]+">[^<]+<\/a>/gm;
-    const supportedResolutions = [];
-    let m;
-    while ((m = regexResolutions.exec(page)) !== null) {
-        supportedResolutions.push(m[1]);
-
+async function getMaxWantedResolution(availableResolutions, res) {
+    if (typeof res == "string" && res.endsWith("p")) {
+        res = parseInt(res.substr(0, res.length - 1));
     }
-
-
-    const seasonTitleMatch = /"seasonTitle":("[^"]+")/.exec(page);
-
-    const seasonTitle = seasonTitleMatch ? JSON.parse(seasonTitleMatch[1]) : undefined;
-
-    return {
-        supportedResolutions,
-        seasonTitle
-    };
-}
-
-async function getMaxWantedResolution(videoData, res) {
-    if (resolutionOrder.indexOf(res) == -1)
-        throw new UserInputException("Unsupported resolution. Valid are: " + resolutionOrder.join(", "));
-    res = res || "1080p";
-
-    if (videoData.supportedResolutions.indexOf(res) > -1) {
+    if (availableResolutions.indexOf(res) > -1) {
         return res;
     }
-
-    for (let i = resolutionOrder.length - 1; i >= 0; i--) {
-        if (videoData.supportedResolutions.indexOf(resolutionOrder[i]) > -1) {
-            console.log(`Resolution ${res} not available. Using ${resolutionOrder[i]} instead.`)
-            return resolutionOrder[i];
+    availableResolutions = availableResolutions.sort((a, b) => a - b)
+    console.log(availableResolutions)
+    for (let i = availableResolutions.length - 1; i >= 0; i--) {
+        if (availableResolutions[i] <= res) {
+            console.log(`Resolution ${res}p not available. Using ${availableResolutions[i]}p instead.`)
+            return availableResolutions[i];
         }
     }
-    console.log(`No resolutions available. Trying ${resolutionOrder[0]}.`)
-    return resolutionOrder[0];
+    throw new RuntimeException(`No resolutions found.`);
+
 }
 
 
@@ -322,40 +305,6 @@ async function downloadPlaylistUrl(url, resolution, onlySeason, options) {
     // console.log(JSON.stringify(list, undefined, "  "))
 }
 
-async function downloadsSubs(subtitles) {
-    try {
-        fs.mkdirSync("SubData")
-    } catch (e) {}
-    const subsAvailiable = [];
-    for (let i = 0; i < subtitles.length; i++) {
-        const stta = new SubtitleToAss(subtitles[i]);
-        const subtitleModel = await stta.getModel();
-        const langCode = langs.where("1", subtitleModel.langCode.substring(0, 2))["2T"];
-        const langString = subtitles[i].getTitle().match(/\[(.*)\]/)[1];
-        const title = langString;
-        const ass = await stta.getContentAsAss();
-        const filename = "SubData/" + subtitleModel.langCode + ".ass"
-        fs.writeFileSync(filename, ass)
-        subsAvailiable.push({
-            title: title,
-            language: langCode,
-            langCode: subtitleModel.langCode,
-            path: filename,
-            default: subtitles[i].isDefault()
-        })
-    }
-    return subsAvailiable;
-}
-
-const possibleSubValues = ["enUS", "esLA", "esES", "frFR", "ptBR", "arME", "itIT", "deDE", "ruRU", ]
-async function verifySubList(list) {
-    for (const lang of list) {
-        if (possibleSubValues.indexOf(lang) == -1) {
-            throw new UserInputException("Unknown subtitle language: " + lang + ". Supported languages are: " + possibleSubValues.join(", "));
-        }
-    }
-}
-
 async function downloadVideoUrl(url, resolution, options) {
     loadCookieJar();
     //if (options.subLangs) {
@@ -366,38 +315,73 @@ async function downloadVideoUrl(url, resolution, options) {
         throw new UserInputException("Invalid video URL");
     }
 
-    const videoData = await getVideoData(url);
-    resolution = await getMaxWantedResolution(videoData, resolution)
+    const html = (await httpClientInstance.get(url)).body;
+    let media;
+    if (html.indexOf("vilos.config.media") == -1) {
+        // Flash Player
+        console.log("(Flash Player)")
+        media = new MediaLegacyPlayer(html, url);
+    } else {
+        // Vilos Player
+        console.log("(HTML5 Player)")
+        media = new MediaVilosPlayer(html, url);
+    }
 
-    const media = await getMediaByUrl(url, resolution);
+    resolution = await getMaxWantedResolution(await media.getAvailableResolutions(null), resolution);
 
-    //media.
-    const subtitles = media.getSubtitles();
-    const subsAvailiable = await downloadsSubs(subtitles);
+    // We may get multiple streams on different servers. Just take first.
+    let selectedStream = (await media.getStreams(resolution, null))[0];
+
+    const subtitles = await media.getSubtitles();
 
     if (options.listSubs) {
-        console.table(subsAvailiable);
-        return;
+        const subsTable = [];
+        for (const sub of subtitles) {
+            subsTable.push({ title: await sub.getTitle(), langCode: await sub.getLanguage(), isDefault: await sub.isDefault() });
+        }
+        console.table(subsTable);
+        return
     }
 
     let subsToInclude = [];
+    mkdirp.sync("SubData");
     if (options.subLangs) {
         const langs = options.subLangs.split(",")
         if (!options.subDefault) {
             options.subDefault = langs[0];
         }
         for (const lang of langs) {
-            const sub = subsAvailiable.find((v) => {
-                return v.langCode == lang
-            });
+            let sub;
+            for (const subt of subtitles) {
+                if (await subt.getLanguage() == lang) {
+                    sub = subt;
+                    break;
+                }
+            };
             if (!sub) {
                 console.error("Subtitles for " + lang + " not available. Skipping...");
             } else {
-                subsToInclude.push(sub);
+                fs.writeFileSync(`SubData/${await sub.getLanguage()}.ass`, await sub.getData());
+                subsToInclude.push({
+                    title: await sub.getTitle(),
+                    path: `SubData/${await sub.getLanguage()}.ass`,
+                    language: await sub.getLanguageISO6392T(),
+                    langCode: await sub.getLanguage(),
+                    default: await sub.isDefault()
+                });
             }
         }
     } else {
-        subsToInclude = subsAvailiable;
+        for (const sub of subtitles) {
+            fs.writeFileSync(`SubData/${await sub.getLanguage()}.ass`, await sub.getData());
+            subsToInclude.push({
+                title: await sub.getTitle(),
+                path: `SubData/${await sub.getLanguage()}.ass`,
+                language: await sub.getLanguageISO6392T(),
+                langCode: await sub.getLanguage(),
+                default: await sub.isDefault()
+            });
+        }
     }
 
     if (options.subDefault) {
@@ -419,11 +403,11 @@ async function downloadVideoUrl(url, resolution, options) {
     console.table(subsToInclude);
 
     const metadata = {
-        episodeTitle: media.getMetadata().getEpisodeTitle(),
-        seriesTitle: media.getMetadata().getSeriesTitle(),
-        episodeNumber: media.getMetadata().getEpisodeNumber(),
-        seasonTitle: videoData.seasonTitle || media.getMetadata().getSeriesTitle(),
-        resolution: resolution,
+        episodeTitle: await media.getEpisodeTitle(),
+        seriesTitle: await media.getSeriesTitle(),
+        episodeNumber: await media.getEpisodeNumber(),
+        seasonTitle: await media.getSeasonTitle(),
+        resolution: selectedStream.getHeight() + "p",
     }
 
     if (!isNaN(metadata.episodeNumber)) {
@@ -442,7 +426,7 @@ async function downloadVideoUrl(url, resolution, options) {
     if (outputDirectory.length > 0) {
         mkdirp.sync(outputDirectory);
     }
-    await downloadVideoFromM3U(media.getStream().getFile(), "VodVid", options)
+    await downloadVideoFromM3U(selectedStream.getUrl(), "VodVid", options)
     await processVideo("VodVid.m3u8", metadata, subsToInclude, outputPath, options)
     saveCookieJar();
     cleanUp();
