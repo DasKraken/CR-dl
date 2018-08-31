@@ -1,6 +1,6 @@
 {
   "name": "cr-dl",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "description": "",
   "main": "src/CrDl.js",
   "scripts": {
