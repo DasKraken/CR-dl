@@ -90,6 +90,10 @@ class MediaVilosPlayer {
         return subtitles;
     }
 
+    async getDefaultLanguage(){
+        return this._language;
+    }
+
     async _loadStreamData(stream) {
         if (stream.data) return;
         stream.data = (await _httpClient.get(stream.url)).body;

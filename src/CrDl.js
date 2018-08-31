@@ -305,6 +305,51 @@ async function downloadPlaylistUrl(url, resolution, onlySeason, options) {
     // console.log(JSON.stringify(list, undefined, "  "))
 }
 
+async function getSubsToInclude(subtitles, options) {
+    let subsToInclude = [];
+    mkdirp.sync("SubData");
+    const langs = options.subLangs.split(",")
+    for (const lang of langs) {
+        let sub;
+        for (const subt of subtitles) {
+            if (await subt.getLanguage() == lang) {
+                sub = subt;
+                break;
+            }
+        };
+        if (!sub) {
+            console.error("Subtitles for " + lang + " not available. Skipping...");
+        } else {
+            fs.writeFileSync(`SubData/${await sub.getLanguage()}.ass`, await sub.getData());
+            subsToInclude.push({
+                title: await sub.getTitle(),
+                path: `SubData/${await sub.getLanguage()}.ass`,
+                language: await sub.getLanguageISO6392T(),
+                langCode: await sub.getLanguage(),
+                default: false
+            });
+        }
+    }
+
+    let defaultSet = false;
+    for (const sub of subsToInclude) {
+        if (sub.langCode == options.subDefault) {
+            sub.default = true;
+            defaultSet = true;
+        } else {
+            sub.default = false;
+        }
+    }
+    if (!defaultSet) {
+        throw new UserInputException("Couldn't set " + options.subDefault + " as default subtitle: subtitle not available.")
+    }
+
+    console.log("Following subtitles will be included: ")
+    console.table(subsToInclude);
+
+    return subsToInclude;
+}
+
 async function downloadVideoUrl(url, resolution, options) {
     loadCookieJar();
     //if (options.subLangs) {
@@ -316,6 +361,7 @@ async function downloadVideoUrl(url, resolution, options) {
     }
 
     const html = (await httpClientInstance.get(url)).body;
+    saveCookieJar();
     let media;
     if (html.indexOf("vilos.config.media") == -1) {
         // Flash Player
@@ -327,14 +373,9 @@ async function downloadVideoUrl(url, resolution, options) {
         media = new MediaVilosPlayer(html, url);
     }
 
-    resolution = await getMaxWantedResolution(await media.getAvailableResolutions(null), resolution);
-
-    // We may get multiple streams on different servers. Just take first.
-    let selectedStream = (await media.getStreams(resolution, null))[0];
-
     const subtitles = await media.getSubtitles();
-
     if (options.listSubs) {
+        // List subs. Do not download.
         const subsTable = [];
         for (const sub of subtitles) {
             subsTable.push({ title: await sub.getTitle(), langCode: await sub.getLanguage(), isDefault: await sub.isDefault() });
@@ -343,64 +384,38 @@ async function downloadVideoUrl(url, resolution, options) {
         return
     }
 
-    let subsToInclude = [];
-    mkdirp.sync("SubData");
-    if (options.subLangs) {
-        const langs = options.subLangs.split(",")
-        if (!options.subDefault) {
+
+    if (!options.subDefault) {
+        if (options.subLangs) {
+            const langs = options.subLangs.split(",")
             options.subDefault = langs[0];
+        } else {
+            options.subDefault = await media.getDefaultLanguage();
         }
-        for (const lang of langs) {
-            let sub;
-            for (const subt of subtitles) {
-                if (await subt.getLanguage() == lang) {
-                    sub = subt;
-                    break;
-                }
-            };
-            if (!sub) {
-                console.error("Subtitles for " + lang + " not available. Skipping...");
-            } else {
-                fs.writeFileSync(`SubData/${await sub.getLanguage()}.ass`, await sub.getData());
-                subsToInclude.push({
-                    title: await sub.getTitle(),
-                    path: `SubData/${await sub.getLanguage()}.ass`,
-                    language: await sub.getLanguageISO6392T(),
-                    langCode: await sub.getLanguage(),
-                    default: await sub.isDefault()
-                });
-            }
-        }
+    }
+    if (!options.subLangs) {
+        options.subLangs = options.subDefault;
+    }
+
+
+    let subsToInclude;
+    if (options.hardsub) {
+        if (options.subLangs.split(",").length > 1) throw new UserInputException("Cannot embed multiple subtitles with --hardsub");
+        options.hardsubLang = options.subDefault;
+        subsToInclude = [];
+        
+        console.log(`Selected ${options.hardsubLang} as hardsub.`)
     } else {
-        for (const sub of subtitles) {
-            fs.writeFileSync(`SubData/${await sub.getLanguage()}.ass`, await sub.getData());
-            subsToInclude.push({
-                title: await sub.getTitle(),
-                path: `SubData/${await sub.getLanguage()}.ass`,
-                language: await sub.getLanguageISO6392T(),
-                langCode: await sub.getLanguage(),
-                default: await sub.isDefault()
-            });
-        }
+        options.hardsubLang = null;
+        subsToInclude = await getSubsToInclude(subtitles, options);
     }
 
-    if (options.subDefault) {
-        let defaultSet = false;
-        for (const sub of subsToInclude) {
-            if (sub.langCode == options.subDefault) {
-                sub.default = true;
-                defaultSet = true;
-            } else {
-                sub.default = false;
-            }
-        }
-        if (!defaultSet) {
-            throw new UserInputException("Couldn't set " + options.subDefault + " as default subtitle: subtitle not available.")
-        }
-    }
 
-    console.log("Following subtitles will be included: ")
-    console.table(subsToInclude);
+    resolution = await getMaxWantedResolution(await media.getAvailableResolutions(options.hardsubLang), resolution);
+
+    // We may get multiple streams on different servers. Just take first.
+    let selectedStream = (await media.getStreams(resolution, options.hardsubLang))[0];
+
 
     const metadata = {
         episodeTitle: await media.getEpisodeTitle(),
@@ -426,6 +441,7 @@ async function downloadVideoUrl(url, resolution, options) {
     if (outputDirectory.length > 0) {
         mkdirp.sync(outputDirectory);
     }
+
     await downloadVideoFromM3U(selectedStream.getUrl(), "VodVid", options)
     await processVideo("VodVid.m3u8", metadata, subsToInclude, outputPath, options)
     saveCookieJar();

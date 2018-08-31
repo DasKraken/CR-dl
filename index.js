@@ -160,6 +160,12 @@ const run = async () => {
       help: "Output filename template, see the \"OUTPUT TEMPLATE\" for all the info "
     }
   );
+  download.addArgument(
+    ["--hardsub"], {
+      action: "storeTrue",
+      help: "Download hardsubbed video stream. Only one subtitle specified by --subDefault will be included."
+    }
+  );
   const args = parser.parseArgs();
 
   args.showProgressBar = !args.hideProgressBar;

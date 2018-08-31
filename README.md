@@ -78,6 +78,9 @@ Specify subtitle language to be set as default. (eg.enUS). (Default: if --subLan
 ```--listSubs```
 Don't download. Show list of available subtitle languages.
 
+```--hardsub```
+Download hardsubbed video stream. Only one subtitle specified by --subDefault will be included.
+
 ```--maxAttempts N```
 Max number of download attempts before aborting. (Default: 5)
 

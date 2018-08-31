@@ -80,6 +80,9 @@ Sprache, dessen Untertitel als Standard ausgewählt werden sollen. (z.B: enUS). 
 ```--listSubs```
 Video nicht runterladen. Zeigt nur Liste an verfügbaren Sprachen an.
 
+```--hardsub```
+Lade einen Hardsub Videostream runter. Nur eine Untertitelsprache wird eingebettet, die mit --subDefault spezifiziert werden kann.
+
 ```--maxAttempts N```
 Anzahl Wiederholungsversuche bei Netzwerkproblemen. (Standard: 5)
 

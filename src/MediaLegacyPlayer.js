@@ -75,9 +75,24 @@ class MediaLegacyPlayer {
         }
         return subtitlesCustom;
     }
+
+    async getDefaultLanguage() {
+        if (!this._CLMedia) {
+            this._CLMedia = await getMediaByUrl(this._url, "1080p");
+            this._CLMediaResolution = "1080p";
+        }
+        const subtitles = this._CLMedia.getSubtitles();
+        for (let i = 0; i < subtitles.length; i++) {
+            if (subtitles[i].isDefault()) {
+                return await (new SubtitleLegacyPlayer(subtitles[i])).getLanguage();
+            }
+        }
+        return null;
+    }
+
     async getAvailableResolutions(hardSubLang) {
         if (hardSubLang) {
-            throw new UserInputException("No Hardsub available. (Flash Player)");
+            throw new UserInputException("No Hardsub available in Flash Player");
         }
 
         const availableResolutions = [];
@@ -91,7 +106,7 @@ class MediaLegacyPlayer {
     }
     async getStreams(resolution, hardSub) {
         if (hardSub) {
-            throw new UserInputException("No Hardsub available. (Flash Player)");
+            throw new UserInputException("No Hardsub available in Flash Player");
         }
         if (!this._CLMedia || this._CLMediaResolution != resolution) {
             // @ts-ignore
