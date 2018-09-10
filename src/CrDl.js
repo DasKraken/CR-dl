@@ -310,6 +310,7 @@ async function getSubsToInclude(subtitles, options) {
     mkdirp.sync("SubData");
     const langs = options.subLangs.split(",")
     for (const lang of langs) {
+        if (lang == "none") continue;
         let sub;
         for (const subt of subtitles) {
             if (await subt.getLanguage() == lang) {
@@ -340,7 +341,7 @@ async function getSubsToInclude(subtitles, options) {
             sub.default = false;
         }
     }
-    if (!defaultSet) {
+    if (!defaultSet && options.subDefault != "none") {
         throw new UserInputException("Couldn't set " + options.subDefault + " as default subtitle: subtitle not available.")
     }
 
@@ -389,6 +390,8 @@ async function downloadVideoUrl(url, resolution, options) {
         if (options.subLangs) {
             const langs = options.subLangs.split(",")
             options.subDefault = langs[0];
+        } else if (subtitles.length == 0) {
+            options.subDefault = "none";
         } else {
             options.subDefault = await media.getDefaultLanguage();
         }
@@ -403,8 +406,8 @@ async function downloadVideoUrl(url, resolution, options) {
         if (options.subLangs.split(",").length > 1) throw new UserInputException("Cannot embed multiple subtitles with --hardsub");
         options.hardsubLang = options.subDefault;
         subsToInclude = [];
-        
-        console.log(`Selected ${options.hardsubLang} as hardsub.`)
+
+        console.log(`Selected "${options.hardsubLang}" as hardsub language.`)
     } else {
         options.hardsubLang = null;
         subsToInclude = await getSubsToInclude(subtitles, options);
