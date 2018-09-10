@@ -305,19 +305,25 @@ async function downloadPlaylistUrl(url, resolution, onlySeason, options) {
     // console.log(JSON.stringify(list, undefined, "  "))
 }
 
+async function getSubtitleByLanguage(subtitles, language) {
+    let sub;
+    for (const subt of subtitles) {
+        if (await subt.getLanguage() == language) {
+            sub = subt;
+            break;
+        }
+    };
+    return sub;
+}
+
 async function getSubsToInclude(subtitles, options) {
     let subsToInclude = [];
     mkdirp.sync("SubData");
     const langs = options.subLangs.split(",")
     for (const lang of langs) {
         if (lang == "none") continue;
-        let sub;
-        for (const subt of subtitles) {
-            if (await subt.getLanguage() == lang) {
-                sub = subt;
-                break;
-            }
-        };
+
+        const sub = await getSubtitleByLanguage(subtitles, lang);
         if (!sub) {
             console.error("Subtitles for " + lang + " not available. Skipping...");
         } else {
@@ -349,6 +355,16 @@ async function getSubsToInclude(subtitles, options) {
     console.table(subsToInclude);
 
     return subsToInclude;
+}
+
+
+async function downloadSubsOnly(subtitlesToInclude, outputPath) {
+    if (outputPath.lastIndexOf("/") < outputPath.lastIndexOf(".")) {
+        outputPath = outputPath.substr(0, outputPath.lastIndexOf("."));
+    }
+    for (const sub of subtitlesToInclude) {
+        fs.renameSync(sub.path, `${outputPath}.${sub.langCode}.ass`);
+    }
 }
 
 async function downloadVideoUrl(url, resolution, options) {
@@ -408,7 +424,6 @@ async function downloadVideoUrl(url, resolution, options) {
         }
 
     }
-    
     let subsToInclude;
     if (options.hardsub) {
         if (options.subLangs.split(",").length > 1) throw new UserInputException("Cannot embed multiple subtitles with --hardsub");
@@ -421,11 +436,13 @@ async function downloadVideoUrl(url, resolution, options) {
         subsToInclude = await getSubsToInclude(subtitles, options);
     }
 
+    let selectedStream
+    if (!options.subsOnly) {
+        resolution = await getMaxWantedResolution(await media.getAvailableResolutions(options.hardsubLang), resolution);
 
-    resolution = await getMaxWantedResolution(await media.getAvailableResolutions(options.hardsubLang), resolution);
-
-    // We may get multiple streams on different servers. Just take first.
-    let selectedStream = (await media.getStreams(resolution, options.hardsubLang))[0];
+        // We may get multiple streams on different servers. Just take first.
+        selectedStream = (await media.getStreams(resolution, options.hardsubLang))[0];
+    }
 
 
     const metadata = {
@@ -433,7 +450,7 @@ async function downloadVideoUrl(url, resolution, options) {
         seriesTitle: await media.getSeriesTitle(),
         episodeNumber: await media.getEpisodeNumber(),
         seasonTitle: await media.getSeasonTitle(),
-        resolution: selectedStream.getHeight() + "p",
+        resolution: options.subsOnly ? "subtitles" : selectedStream.getHeight() + "p",
     }
 
     if (!isNaN(metadata.episodeNumber)) {
@@ -445,16 +462,25 @@ async function downloadVideoUrl(url, resolution, options) {
         formatData[prop] = toFilename(metadata[prop]);
     }
 
-    options.output = options.output || "{seasonTitle} [{resolution}]/{seasonTitle} - {episodeNumber} - {episodeTitle} [{resolution}].mkv"
+    if (!options.output) {
+        if (options.subsOnly) {
+            options.output = "{seasonTitle} [subtitles]/{seasonTitle} - {episodeNumber} - {episodeTitle}.ass";
+        } else {
+            options.output = "{seasonTitle} [{resolution}]/{seasonTitle} - {episodeNumber} - {episodeTitle} [{resolution}].mkv";
+        }
+    }
     const outputPath = format(options.output, formatData)
 
     const outputDirectory = outputPath.substring(0, outputPath.lastIndexOf("/"));
     if (outputDirectory.length > 0) {
         mkdirp.sync(outputDirectory);
     }
-
-    await downloadVideoFromM3U(selectedStream.getUrl(), "VodVid", options)
-    await processVideo("VodVid.m3u8", metadata, subsToInclude, outputPath, options)
+    if (options.subsOnly) {
+        await downloadSubsOnly(subsToInclude, outputPath);
+    } else {
+        await downloadVideoFromM3U(selectedStream.getUrl(), "VodVid", options)
+        await processVideo("VodVid.m3u8", metadata, subsToInclude, outputPath, options)
+    }
     saveCookieJar();
     cleanUp();
 }

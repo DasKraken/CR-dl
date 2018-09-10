@@ -166,6 +166,12 @@ const run = async () => {
       help: "Download hardsubbed video stream. Only one subtitle specified by --subDefault will be included."
     }
   );
+  download.addArgument(
+    ["--subsOnly"], {
+      action: "storeTrue",
+      help: "Download only subtitles. No Video."
+    }
+  );
   const args = parser.parseArgs();
 
   args.showProgressBar = !args.hideProgressBar;
