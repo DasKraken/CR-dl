@@ -397,10 +397,18 @@ async function downloadVideoUrl(url, resolution, options) {
         }
     }
     if (!options.subLangs) {
-        options.subLangs = options.subDefault;
+        if (options.hardsub) {
+            options.subLangs = options.subDefault;
+        } else {
+            let subLangs = [];
+            for (const sub of subtitles) {
+                subLangs.push(await sub.getLanguage());
+            }
+            options.subLangs = subLangs.join(",");
+        }
+
     }
-
-
+    
     let subsToInclude;
     if (options.hardsub) {
         if (options.subLangs.split(",").length > 1) throw new UserInputException("Cannot embed multiple subtitles with --hardsub");
