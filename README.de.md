@@ -72,13 +72,16 @@ Folgende optionale Arguments können mit 'download' verwendet werden:
 Anzahl der gleichzeitigen Verbindungen (default: 20)
 
 ```--subLangs LANGS```
-Eine kommagetrennte Liste (ohne Leerzeichen) an Sprachen die in das Video eingebettet werden sollen. (z.B.: deDE,enUS)
+Eine kommagetrennte Liste (ohne Leerzeichen) an Sprachen die in das Video eingebettet werden sollen. (z.B.: deDE,enUS). Setze auf ```none``` um keine Untertitel einzubetten.
 
 ```-l LANG, --subDefault LANG```
 Sprache, dessen Untertitel als Standard ausgewählt werden sollen. (z.B: enUS). Standard ist der erste Eintrag von --subLangs, falls angegeben, ansonsten CR-Standard.
 
 ```--listSubs```
 Video nicht runterladen. Zeigt nur Liste an verfügbaren Sprachen an.
+
+```--subsOnly```
+Lade nur Untertitel herunter. Kein Video.
 
 ```--hardsub```
 Lade einen Hardsub Videostream runter. Nur eine Untertitelsprache wird eingebettet, die mit --subDefault spezifiziert werden kann.

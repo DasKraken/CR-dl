@@ -70,13 +70,16 @@ cr-dl download <URL> <resolution> <seasonNumber>
 Number of simultaneous connections (default: 20)
 
 ```--subLangs LANGS```
-Specify subtitle languages as a comma separated list to include in video. (eg. deDE,enUS)
+Specify subtitle languages as a comma separated list to include in video. (eg. deDE,enUS). Set to ```none``` to embed no subtitles.
 
 ```-l LANG, --subDefault LANG```
 Specify subtitle language to be set as default. (eg.enUS). (Default: if --subLangs defined: first entry, otherwise: crunchyroll default)
 
 ```--listSubs```
 Don't download. Show list of available subtitle languages.
+
+```--subsOnly```
+Download only subtitles. No Video.
 
 ```--hardsub```
 Download hardsubbed video stream. Only one subtitle specified by --subDefault will be included.
@@ -89,6 +92,7 @@ Hide progress bar.
 
 ```-o OUTPUT, --output OUTPUT```
 Output filename template, see the "OUTPUT TEMPLATE" for all the info
+
 
 ### OUTPUT TEMPLATE
 Output template is a string specified with -o where every {...} will be replaced with the value represented by given name. 
