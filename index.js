@@ -188,7 +188,7 @@ const run = async () => {
       await CrDl.downloadPlaylistUrl(args.url, args.resolution, args.seasonNumber, args);
     }
   } else if (args.subcommand_name == "language" || args.subcommand_name == "lang") {
-    const possibleSubValues = ["enUS", "enGB", "esLA", "esES", "ptBR", "ptPT", "frFR", "deDE", "arME", "itIT", "ruRU", ]
+    const possibleSubValues = ["enUS", "enGB", "esLA", "esES", "ptBR", "ptPT", "frFR", "deDE", "arME", "itIT", "ruRU",]
     if (possibleSubValues.indexOf(args.lang) > -1) {
       await CrDl.setLang(args.lang);
     } else {
@@ -205,7 +205,7 @@ run(process.argv)
     CrDl.cleanUp();
   }, (err) => {
     if (err instanceof UserInputException) {
-      console.log(err.message)
+      console.log("Error: " + err.message);
     } else if (err instanceof CloudflareException) {
       console.log("Couldn't bypass Cloudflare protection: " + err.message)
     } else {

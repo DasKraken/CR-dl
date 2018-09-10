@@ -54,7 +54,7 @@ cr-dl download <URL> [resolution]
 
 Downloading a series from URL. This will download all videos in the given playlist:
 ```
-node index.js download <URL> [resolution]
+cr-dl download <URL> [resolution]
 ```
 
 

@@ -225,8 +225,11 @@ async function setLang(lang) {
 
 async function getMaxWantedResolution(availableResolutions, res) {
     if (typeof res == "string" && res.endsWith("p")) {
-        res = parseInt(res.substr(0, res.length - 1));
+        res = res.substr(0, res.length - 1);
     }
+    res = parseInt(res)
+    if (isNaN(res)) throw new UserInputException("Invalid resolution.");
+    
     if (availableResolutions.indexOf(res) > -1) {
         return res;
     }
