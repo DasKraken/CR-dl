@@ -78,7 +78,7 @@ class MediaVilosPlayer {
         this._html = html;
         this._url = url;
         this._language = JSON.parse(this._html.match(/vilos\.config\.player\.language = ([^;]+);/)[1]);
-        this._config = JSON.parse(this._html.match(/vilos\.config\.media = ([^;]+);/)[1]);
+        this._config = JSON.parse(this._html.match(/vilos\.config\.media = (.+);/)[1]);
     };
     async getSubtitles() {
 
