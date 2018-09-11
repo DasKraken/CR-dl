@@ -372,6 +372,7 @@ async function downloadSubsOnly(subtitlesToInclude, outputPath) {
 
 async function downloadVideoUrl(url, resolution, options) {
     loadCookieJar();
+    jar.setCookie(request.cookie('VILOS_ROLLOUT=9d5ed678fe57bcca610140957afab571_6; Max-Age=31536000; path=/; domain=crunchyroll.com; httponly'), "http://crunchyroll.com/");
     //if (options.subLangs) {
     //    await verifySubList(options.subLangs.split(","))
     //}
