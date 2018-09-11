@@ -229,7 +229,7 @@ async function getMaxWantedResolution(availableResolutions, res) {
     }
     res = parseInt(res)
     if (isNaN(res)) throw new UserInputException("Invalid resolution.");
-    
+
     if (availableResolutions.indexOf(res) > -1) {
         return res;
     }
@@ -379,8 +379,16 @@ async function downloadVideoUrl(url, resolution, options) {
     if (!videoIdMatch) {
         throw new UserInputException("Invalid video URL");
     }
-
-    const html = (await httpClientInstance.get(url)).body;
+    let html;
+    try {
+        html = (await httpClientInstance.get(url)).body;
+    } catch (e) {
+        if (e.status) {
+            throw new NetworkException("Status " + e.status + ": " + e.statusText);
+        } else {
+            throw e;
+        }
+    }
     saveCookieJar();
     let media;
     if (html.indexOf("vilos.config.media") == -1) {
