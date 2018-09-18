@@ -57,8 +57,8 @@ cr-dl download <URL> [resolution]
 ```--season SEASON, --seasons SEASONS```
 A season number or a comma-separated list (without spaces) of season numbers to download (eg. ```1,2```). Works only for series-links. Note: Season 1 is the bottom-most season on the website.
 
-```--episode EPISODE, --episode EPISODES```
-A comma-separated list of episode numbers to download. A ```-``` can be used to specify an area (eg. ```01,03-05,SP2```). Works only for series-links. If multiple seasons are available, you must specify one with --season.
+```--episode EPISODE, --episodes EPISODES```
+A comma-separated list of episode numbers to download. A ```-``` (minus) can be used to specify an area (eg. ```01,03-05,SP2```). Works only for series-links. If multiple seasons are available, you must specify one with --season.
  
 ```-c N, --connections N```
 Number of simultaneous connections (default: 20)
@@ -154,7 +154,7 @@ cr-dl download http://www.crunchyroll.com/darling-in-the-franxx --episodes 1,3-5
 ```
 
 
-Download video and add only german and english subs to container with german as default:
+Download video and add only german and english subs and set german as default:
 ```
 cr-dl download --subLangs deDE,enUS URL
 ```
