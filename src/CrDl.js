@@ -23,7 +23,7 @@ const {
 const fs = require("fs");
 let format = require('string-format')
 const mkdirp = require('mkdirp');
-const removeDiacritics = require('diacritics').remove;
+const { pad, deleteFolderRecursive, toFilename, formatScene } = require('./Utils');
 
 let jar = request.jar()
 setCookieJar(jar);
@@ -36,39 +36,8 @@ const httpClientInstance = new NodeHttpClient();
 const cloudflareBypass = new CloudflareBypass(httpClientInstance);
 
 format = format.create({
-    scene: s => {
-        s = removeDiacritics(s);
-        s = s.replace(/[^A-Za-z0-9\._-]/g, ".");
-        s = s.replace(/\.{2,}/g, ".");
-        s = s.replace(/-{2,}/g, "-");
-        s = s.replace(/_{2,}/g, "_");
-        s = s.replace(/[._-]{2,}/g, ".");
-        s = s.replace(/^[._-]/, "");
-        s = s.replace(/[._-]$/, "");
-        return s;
-    },
+    scene: formatScene
 })
-
-
-function pad(num, size) {
-    var s = num + "";
-    while (s.length < size) s = "0" + s;
-    return s;
-}
-
-var deleteFolderRecursive = function (path) {
-    if (fs.existsSync(path)) {
-        fs.readdirSync(path).forEach(function (file, index) {
-            var curPath = path + "/" + file;
-            if (fs.lstatSync(curPath).isDirectory()) { // recurse
-                deleteFolderRecursive(curPath);
-            } else { // delete file
-                fs.unlinkSync(curPath);
-            }
-        });
-        fs.rmdirSync(path);
-    }
-};
 
 function loadCookieJar() {
     if (fs.existsSync("cookies.data")) {
@@ -116,10 +85,6 @@ function loadAltCookies(c) {
 function saveCookieJar() {
     // @ts-ignore
     fs.writeFileSync("cookies.data", JSON.stringify(jar._jar.serializeSync()));
-}
-
-function toFilename(str) {
-    return str.replace(/[\\/:*?"<>|]+/g, "_")
 }
 
 function cleanUp() {
@@ -435,6 +400,8 @@ async function downloadSubsOnly(subtitlesToInclude, outputPath) {
 
 async function downloadVideoUrl(url, resolution, options) {
     loadCookieJar();
+
+    // Set cookie to get vilos player
     jar.setCookie(request.cookie('VILOS_ROLLOUT=9d5ed678fe57bcca610140957afab571_6; Max-Age=31536000; path=/; domain=crunchyroll.com; httponly'), "http://crunchyroll.com/");
     //if (options.subLangs) {
     //    await verifySubList(options.subLangs.split(","))
