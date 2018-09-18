@@ -48,25 +48,20 @@ cr-dl language LANG
 ```
 
 
-Ein Video von einer URL herunterladen. Optional kann eine Auflösung angegeben werden (360p, 480p, 720p, 1080p):
+Ein Video oder eine Serie von einer URL herunterladen. Optional kann eine Auflösung angegeben werden (360p, 480p, 720p, 1080p):
 ```
 cr-dl download <URL> [auflösung]
 ```
 
-
-Eine Serie von einer URL herunterladen. Dies lädt alle Videos in der Playlist herunter:
-```
-cr-dl download <URL> [auflösung]
-```
-
-
-Nur eine Staffel einer Serie von einer URL herunterladen. Dies lädt nur die Videos der angegebenen Staffelnummer herunter:
-```
-cr-dl download <URL> <auflösung> <staffelNummer>
-```
 
 ### Optionale Argumente:
 Folgende optionale Arguments können mit 'download' verwendet werden:
+
+```--season SEASON, --seasons SEASONS```
+Eine Staffelnummer oder eine kommagetrennte Liste (ohne Leerzeichen) von Staffelnummern zum Herunterladen (z.B.: ```1,2```). Funktioniert nur mit Serien-URLs. Anmerkung: Staffel 1 ist die unterste Staffel auf der Webseite.
+
+```--episode EPISODE, --episodes EPISODES```
+Eine kommagetrennte Liste (ohne Leerzeichen) von Episodennummern zum herunterladen. Ein ```-``` (Minus) kann verwendet werden um einen Bereich anzugeben (z.B.: ```01,03-05,SP2```). Funktioniert nur mit Serien-URLs. Falls mehrere Staffeln verfügbar sind, muss man eine mit --season auswählen.
  
 ```-c N, --connections N```
 Anzahl der gleichzeitigen Verbindungen (default: 20)
@@ -147,8 +142,21 @@ cr-dl download -c 10 -l enUS http://www.crunchyroll.com/hinamatsuri 720p
 
 Lädt nur die 2te Staffel von Food Wars in 1080p:
 ```
-cr-dl download http://www.crunchyroll.com/food-wars-shokugeki-no-soma 1080p 2
+cr-dl download http://www.crunchyroll.com/food-wars-shokugeki-no-soma --season 2
 ```
+
+
+Lädt Bungo Stray Dogs 1 and 2:
+```
+cr-dl download http://www.crunchyroll.com/bungo-stray-dogs --seasons 6,7
+```
+
+
+Lädt die Episoden 1,3,4,5 und Spezial 2 von DITF:
+```
+cr-dl download http://www.crunchyroll.com/darling-in-the-franxx --episodes 1,3-5,SP2
+```
+
 
 Lädt Video mit deutschen und englischen Untertiteln runter und setzt deutsch als Standard:
 ```
