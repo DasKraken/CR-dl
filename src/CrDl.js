@@ -313,6 +313,7 @@ async function downloadPlaylistUrl(url, resolution, options) {
 
     for (const season of seasonsToDownload) {
         for (const episode of season.episodes) {
+            console.log();
             console.log(`Downloading S(${pad(seasonsToDownload.indexOf(season) + 1, 2)}/${pad(seasonsToDownload.length, 2)})E(${pad(season.episodes.indexOf(episode) + 1, 2)}/${pad(season.episodes.length, 2)}) - ${episode.name}`);
             await downloadVideoUrl("http://www.crunchyroll.com" + episode.url, resolution, options)
         }
@@ -492,6 +493,8 @@ async function downloadVideoUrl(url, resolution, options) {
         }
     }
     const outputPath = format(options.output, formatData)
+
+    console.log(`Downloading to "${outputPath}"...`);
 
     const outputDirectory = outputPath.substring(0, outputPath.lastIndexOf("/"));
     if (outputDirectory.length > 0) {
