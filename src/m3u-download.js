@@ -7,55 +7,8 @@ const fs = require("fs");
 const _cliProgress = require('cli-progress');
 const ListDownloader = require("./ListDownloader");
 const prettyBytes = require('pretty-bytes');
-/*
-
-function makeIterator(array) {
-    var nextIndex = 0;
-
-    return {
-        next: function () {
-            return nextIndex < array.length ?
-                array[nextIndex++] :
-                undefined;
-        }
-    };
-}
-function parseValueList(line) {
-    let valList = line.substring(line.indexOf(":") + 1);
-    const listData = {};
-    const regex = /([^=,]+)=(([^,"]+)|"([^"]+)")/g;
-    let m;
-    while ((m = regex.exec(valList)) !== null) {
-        listData[m[1]] = m[3] || m[4];
-    }
-    return listData;
-}
-async function downloadVideoFromM3U(url, dest, options) {
-    options = options || {};
-    options.uri = url;
-    const m3uData = (await rp(options)).toString();
-    const m3uLines = m3uData.split(/[\r\n]+/)
-
-    const streams = [];
-    const sequence = [];
-    let key;
-
-    const linesIterator = makeIterator(m3uLines);
-    let line = ""
-    while (line = linesIterator.next()) {
-        if (line.startsWith("#EXTM3U")) {
-        } else if (line.startsWith("#EXT-X-STREAM-INF:")) {
-            const streamInfo = parseValueList(line);
-            streamInfo.url = linesIterator.next();
-            streams.push(streamInfo);
-            console.log(streamInfo);
-        } else if (line.startsWith("#EXT-X-KEY:")) {
-            key = parseValueList(line);
-        }
-    }
-}
-*/
-
+const mkdirp = require("mkdirp");
+const path = require("path")
 
 var m3u8 = require('m3u8');
 require('m3u8/m3u/AttributeList').dataTypes["frame-rate"] = "decimal-floating-point";
@@ -151,18 +104,18 @@ async function downloadVideoFromM3U(url, dest, options) {
     const m3u = await downloadString(url, options)
     const m3uData = await parseM3U(m3u);
     if (m3uData.items.StreamItem.length > 0) { // Stream List
-        await downloadVideoFromM3U(m3uData.items.StreamItem[0].properties.uri, dest, options)
+        return await downloadVideoFromM3U(m3uData.items.StreamItem[0].properties.uri, dest, options)
     } else {
-        try {
-            fs.mkdirSync(dest + "Data/")
-        } catch (e) {}
+        const dir = path.join(options.tmpDir, dest + "Data");
+        mkdirp.sync(dir);
         if (m3uData.properties["EXT-X-KEY"]) {
             const keyURIMatch = m3uData.properties["EXT-X-KEY"].match(/URI="([^"]+)"/)
             if (!keyURIMatch) throw new RuntimeException("No key URI found")
             const keyURI = keyURIMatch[1];
 
-            await downloadFile(keyURI, dest + "Data/" + getFilenameFromURI(keyURI), options)
-            m3uData.properties["EXT-X-KEY"] = m3uData.properties["EXT-X-KEY"].replace(keyURI, dest + "Data/" + getFilenameFromURI(keyURI));
+            const keyFile = path.join(dir, getFilenameFromURI(keyURI)).replace(/\\/g, "/");;
+            await downloadFile(keyURI, keyFile, options);
+            m3uData.properties["EXT-X-KEY"] = m3uData.properties["EXT-X-KEY"].replace(keyURI, keyFile);
 
         } else {
             throw new RuntimeException("No key found. This should never happen")
@@ -171,10 +124,10 @@ async function downloadVideoFromM3U(url, dest, options) {
         for (const item of m3uData.items.PlaylistItem) {
             const filename = getFilenameFromURI(item.properties.uri);
             const uri = item.properties.uri;
-            item.properties.uri = dest + "Data/" + filename;
+            item.properties.uri = path.join(dir, filename).replace(/\\/g, "/");
             downloadList.push({
                 url: uri,
-                dest: dest + "Data/" + filename
+                dest: path.join(dir, filename)
             })
         }
         const listDownloader = new ListDownloader(downloadList, options);
@@ -216,8 +169,9 @@ async function downloadVideoFromM3U(url, dest, options) {
         }
 
         await downloadPromise;
-        fs.writeFileSync(dest + ".m3u8", m3uData.toString())
-
+        const m3u8File = path.join(options.tmpDir, dest + ".m3u8");
+        fs.writeFileSync(m3u8File, m3uData.toString());
+        return m3u8File;
     }
 }
 

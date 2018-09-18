@@ -181,6 +181,8 @@ const run = async () => {
   const args = parser.parseArgs();
 
   args.showProgressBar = !args.hideProgressBar;
+  args.tmpDir = "tmp/";
+
   if (args.subcommand_name == "login") {
     await CrDl.login(args.username, args.password);
 
@@ -207,7 +209,6 @@ const run = async () => {
 }
 run(process.argv)
   .then(() => {
-    console.log("Cleanup..");
     CrDl.cleanUp();
   }, (err) => {
     if (err instanceof UserInputException) {
@@ -217,6 +218,5 @@ run(process.argv)
     } else {
       console.log(err)
     }
-    console.log("Cleanup..");
     CrDl.cleanUp();
   });

@@ -23,6 +23,7 @@ const {
 const fs = require("fs");
 let format = require('string-format')
 const mkdirp = require('mkdirp');
+const path = require('path');
 const { pad, deleteFolderRecursive, toFilename, formatScene } = require('./Utils');
 
 let jar = request.jar()
@@ -87,20 +88,17 @@ function saveCookieJar() {
     fs.writeFileSync("cookies.data", JSON.stringify(jar._jar.serializeSync()));
 }
 
-function cleanUp() {
+function cleanUp(options) {
+    const dir = (options && options.tmpDir) || "tmp/";
     try {
-        deleteFolderRecursive("SubData");
-    } catch (e) { };
-    try {
-        deleteFolderRecursive("VodVidData");
-    } catch (e) { };
-    try {
-        fs.unlinkSync("VodVid.m3u8")
+        deleteFolderRecursive(dir);
     } catch (e) { };
 }
 
 async function isLoggedIn() {
+    loadCookieJar();
     let res = await httpClientInstance.get("http://www.crunchyroll.com/videos/anime");
+    saveCookieJar();
     return res.body.indexOf("<a href=\"/logout\"") > -1
 }
 
@@ -143,21 +141,6 @@ async function login(username, password) {
         throw new UserInputException("Couldn't log in. Wrong credentials?");
     }
 
-    /*try {
-        const loginReq = await httpClientInstance.post("https://www.crunchyroll.com/?a=formhandler", {
-            'formname': 'RpcApiUser_Login',
-            'next_url': 'https://www.crunchyroll.com/acct/membership',
-            'name': username,
-            'password': password
-        });
-    } catch (e) {}
-
-    if (await isLoggedIn()) {
-        console.log("Login successful");
-    } else {
-        throw new UserInputException("Couldn't log in. Wrong credentials?")
-    }*/
-
 }
 async function logout() {
     loadCookieJar();
@@ -165,7 +148,9 @@ async function logout() {
     saveCookieJar();
 }
 async function getLang() {
+    loadCookieJar();
     let res = await httpClientInstance.get("http://www.crunchyroll.com/videos/anime");
+    saveCookieJar();
     return res.body.match(/<li><a href="#" onclick="return Localization\.SetLang\(&quot;([A-Za-z]{4})&quot;\);" data-language="[^"]+" class="selected">[^"]+<\/a><\/li>/)[1]
 }
 async function setLang(lang) {
@@ -349,7 +334,8 @@ async function getSubtitleByLanguage(subtitles, language) {
 
 async function getSubsToInclude(subtitles, options) {
     let subsToInclude = [];
-    mkdirp.sync("SubData");
+    const dir = path.join(options.tmpDir, "SubData")
+    mkdirp.sync(dir);
     const langs = options.subLangs.split(",")
     for (const lang of langs) {
         if (lang == "none") continue;
@@ -358,10 +344,10 @@ async function getSubsToInclude(subtitles, options) {
         if (!sub) {
             console.error("Subtitles for " + lang + " not available. Skipping...");
         } else {
-            fs.writeFileSync(`SubData/${await sub.getLanguage()}.ass`, await sub.getData());
+            fs.writeFileSync(`${dir}/${await sub.getLanguage()}.ass`, await sub.getData());
             subsToInclude.push({
                 title: await sub.getTitle(),
-                path: `SubData/${await sub.getLanguage()}.ass`,
+                path: `${dir}/${await sub.getLanguage()}.ass`,
                 language: await sub.getLanguageISO6392T(),
                 langCode: await sub.getLanguage(),
                 default: false
@@ -403,13 +389,7 @@ async function downloadVideoUrl(url, resolution, options) {
 
     // Set cookie to get vilos player
     jar.setCookie(request.cookie('VILOS_ROLLOUT=9d5ed678fe57bcca610140957afab571_6; Max-Age=31536000; path=/; domain=crunchyroll.com; httponly'), "http://crunchyroll.com/");
-    //if (options.subLangs) {
-    //    await verifySubList(options.subLangs.split(","))
-    //}
-    const videoIdMatch = /([0-9]+)$/.exec(url);
-    if (!videoIdMatch) {
-        throw new UserInputException("Invalid video URL");
-    }
+
     let html;
     try {
         html = (await httpClientInstance.get(url)).body;
@@ -520,11 +500,11 @@ async function downloadVideoUrl(url, resolution, options) {
     if (options.subsOnly) {
         await downloadSubsOnly(subsToInclude, outputPath);
     } else {
-        await downloadVideoFromM3U(selectedStream.getUrl(), "VodVid", options)
-        await processVideo("VodVid.m3u8", metadata, subsToInclude, outputPath, options)
+        const m3u8File = await downloadVideoFromM3U(selectedStream.getUrl(), "VodVid", options)
+        await processVideo(m3u8File, metadata, subsToInclude, outputPath, options)
     }
     saveCookieJar();
-    cleanUp();
+    cleanUp(options);
 }
 
 module.exports = {
