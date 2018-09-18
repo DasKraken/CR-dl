@@ -369,8 +369,12 @@ async function getSubsToInclude(subtitles, options) {
         throw new UserInputException("Couldn't set " + options.subDefault + " as default subtitle: subtitle not available.")
     }
 
-    console.log("Following subtitles will be included: ")
-    console.table(subsToInclude);
+    if (subsToInclude.length > 0) {
+        console.log("Following subtitles will be included: ")
+        console.table(subsToInclude, ["title", "langCode", "default"]);
+    } else if(!options.hardsub) {
+        console.log("No subtitles will be included.")
+    }
 
     return subsToInclude;
 }
