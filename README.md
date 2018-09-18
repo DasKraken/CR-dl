@@ -46,25 +46,19 @@ cr-dl language LANG
 ```
 
 
-Downloading a video from URL. A resolution can be provided optionally (360p, 480p, 720p, 1080p):
+Downloading a video or a series from URL. A resolution can be provided optionally (360p, 480p, 720p, 1080p):
 ```
 cr-dl download <URL> [resolution]
-```
-
-
-Downloading a series from URL. This will download all videos in the given playlist:
-```
-cr-dl download <URL> [resolution]
-```
-
-
-Downloading only one season of a series from URL. This will download only the videos of the given season number:
-```
-cr-dl download <URL> <resolution> <seasonNumber>
 ```
 
 ### Optional arguments:
  Following optional arguments can be provided to 'download':
+
+```--season SEASON, --seasons SEASONS```
+A season number or a comma-separated list (without spaces) of season numbers to download (eg. ```1,2```). Works only for series-links. Note: Season 1 is the bottom-most season on the website.
+
+```--episode EPISODE, --episode EPISODES```
+A comma-separated list of episode numbers to download. A ```-``` can be used to specify an area (eg. ```01,03-05,SP2```). Works only for series-links. If multiple seasons are available, you must specify one with --season.
  
 ```-c N, --connections N```
 Number of simultaneous connections (default: 20)
@@ -144,7 +138,19 @@ cr-dl download -c 10 -l enUS http://www.crunchyroll.com/hinamatsuri 720p
 
 Download only the second season of Food Wars in 1080p:
 ```
-cr-dl download http://www.crunchyroll.com/food-wars-shokugeki-no-soma 1080p 2
+cr-dl download http://www.crunchyroll.com/food-wars-shokugeki-no-soma --season 2
+```
+
+
+Download Bungo Stray Dogs 1 and 2:
+```
+cr-dl download http://www.crunchyroll.com/bungo-stray-dogs --seasons 6,7
+```
+
+
+Download episodes 1,3,4,5 and special 2 of DITF:
+```
+cr-dl download http://www.crunchyroll.com/darling-in-the-franxx --episodes 1,3-5,SP2
 ```
 
 

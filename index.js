@@ -113,7 +113,7 @@ const run = async () => {
     ["--season", "--seasons"], {
       action: "store",
       type: "string",
-      help: "Season number or a comma-separated list of season numbers to download. Only for series-links. (eg. 01,02)",
+      help: "A season number or a comma-separated list (without spaces) of season numbers can be provided to select which should be downloaded (eg. 1,2). Works only for series-links. Note: Season 1 is the bottom-most season on the website.",
       metavar: "SEASONS"
     }
   );
@@ -121,7 +121,7 @@ const run = async () => {
     ["--episode", "--episodes"], {
       action: "store",
       type: "string",
-      help: "A comma-separated list of episode numbers to download. Only for series-links. Only one season should be available or selected. (eg. 01,03-05,SP2)",
+      help: "A comma-separated list of episode numbers to download. A ```-``` can be used to specify an area (eg. ```01,03-05,SP2```). Works only for series-links. If multiple seasons are available, you must specify one with --season.",
       metavar: "EPISODES"
     }
   );
