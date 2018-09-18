@@ -10,7 +10,6 @@ const {
     RuntimeException,
     NetworkException
 } = require("./Exceptions");
-const SubtitleToAss = require("./SubtitleToAss");
 const downloadVideoFromM3U = require("./m3u-download");
 const processVideo = require("./processVideo");
 const {
@@ -22,7 +21,6 @@ const {
     setHttpClientV
 } = require("./MediaVilosPlayer");
 const fs = require("fs");
-const langs = require('langs');
 let format = require('string-format')
 const mkdirp = require('mkdirp');
 const removeDiacritics = require('diacritics').remove;

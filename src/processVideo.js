@@ -1,11 +1,5 @@
-const {
-    spawn
-} = require('child_process');
-const {
-    UserInputException,
-    RuntimeException,
-    NetworkException
-} = require("./Exceptions");
+const { spawn } = require('child_process');
+const { RuntimeException } = require("./Exceptions");
 const _cliProgress = require('cli-progress');
 
 module.exports = function processVideo(input, metadata, subtitles, output, options) {

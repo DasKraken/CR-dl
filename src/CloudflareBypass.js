@@ -1,6 +1,4 @@
-const {
-    CloudflareException
-} = require("./Exceptions");
+const { CloudflareException } = require("./Exceptions");
 
 function timeout(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));

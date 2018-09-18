@@ -1,9 +1,5 @@
 // @ts-check
-const {
-    UserInputException,
-    RuntimeException,
-    NetworkException
-} = require("./Exceptions");
+const { UserInputException } = require("./Exceptions");
 const langs = require('langs');
 const m3u8 = require('m3u8');
 function parseM3U(data) {
@@ -90,7 +86,7 @@ class MediaVilosPlayer {
         return subtitles;
     }
 
-    async getDefaultLanguage(){
+    async getDefaultLanguage() {
         return this._language;
     }
 

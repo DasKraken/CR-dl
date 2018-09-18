@@ -1,8 +1,5 @@
-const { ISubtitle } = require('crunchyroll-lib/models/ISubtitle');
 const { DOMParser } = require('crunchyroll-lib/services/xml/DOMParser');
-const { Document } = require('crunchyroll-lib/services/xml/Document');
-const { Element } = require('crunchyroll-lib/services/xml/Element');
-const { UserInputException, RuntimeException, NetworkException } = require("./Exceptions");
+const { RuntimeException } = require("./Exceptions");
 
 class BaseXMLModel {
 

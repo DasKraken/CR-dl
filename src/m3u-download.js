@@ -1,9 +1,7 @@
 const {
-    UserInputException,
     RuntimeException,
     NetworkException
 } = require("./Exceptions");
-const rp = require("request-promise-native");
 const request = require("request");
 const fs = require("fs");
 const _cliProgress = require('cli-progress');
