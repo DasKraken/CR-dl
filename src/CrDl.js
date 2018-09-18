@@ -245,9 +245,7 @@ async function getMaxWantedResolution(availableResolutions, res) {
 
 }
 
-
-
-async function downloadPlaylistUrl(url, resolution, onlySeason, options) {
+async function getEpisodesFormUrl(url) {
     loadCookieJar();
     let list = [];
     let seasonNum = -1;
@@ -257,50 +255,117 @@ async function downloadPlaylistUrl(url, resolution, onlySeason, options) {
     } catch (e) {
         console.log("Error " + e.status)
     }
-    const regex = /(?:<a href="([^"]+)" title="([^"]+)"\s+class="portrait-element block-link titlefix episode">)|(?:<a href="#"\s+class="season-dropdown content-menu block text-link strong (?:open)? small-margin-bottom"\s+title="([^"]+)">[^<]+<\/a>)/gm;
+    saveCookieJar();
+    const regex = /(?:<a href="([^"]+)" title="([^"]+)"\s+class="portrait-element block-link titlefix episode">[^$]*<span class="series-title block ellipsis" dir="auto">\s*\S+ (\S+))|(?:<a href="#"\s+class="season-dropdown content-menu block text-link strong (?:open)? small-margin-bottom"\s+title="([^"]+)">[^<]+<\/a>)/gm;
     let m;
     list[0] = {
         name: "",
         episodes: []
     }
     while ((m = regex.exec(page)) !== null) {
-        if (m[3]) {
+        if (m[4]) {
             if (seasonNum != -1) list[seasonNum].episodes = list[seasonNum].episodes.reverse();
             seasonNum++;
             list[seasonNum] = {
-                name: m[3],
+                name: m[4],
                 episodes: []
             };
         } else {
             if (seasonNum == -1) seasonNum = 0;
             list[seasonNum].episodes.push({
                 url: m[1],
-                name: m[2]
+                name: m[2],
+                number: m[3]
             });
         }
     }
     if (seasonNum != -1) list[seasonNum].episodes = list[seasonNum].episodes.reverse();
     list = list.reverse();
 
-    const origlist = list;
+    return list;
+}
 
-    if (onlySeason) {
-        if (isNaN(onlySeason) || parseInt(onlySeason) > list.length || parseInt(onlySeason) < 1) {
-            throw new UserInputException("Invalid season number: " + onlySeason);
-            return;
-        } else {
-            list = [list[parseInt(onlySeason) - 1]];
+async function downloadPlaylistUrl(url, resolution, options) {
+
+    const list = await getEpisodesFormUrl(url);
+
+    let seasonsToDownload = list;
+
+    // select season(s)
+    if (options.season) {
+        const wantedSeasons = options.season.split(",").map((n) => {
+            if (isNaN(n) || n == "") throw new UserInputException(`Season number "${n}" invalid.`);
+            return parseInt(n) - 1
+        });
+        seasonsToDownload = [];
+        for (const s of wantedSeasons) {
+            if (!list[s]) throw new UserInputException(`Season ${s + 1} not available.`);
+            seasonsToDownload.push(list[s]);
         }
     }
 
-    if (list.length == 1 && list[0].episodes.length == 0) {
-        throw new UserInputException("No Episodes found.")
-        return;
+    // Remove empty seasons
+    seasonsToDownload = seasonsToDownload.filter((s) => s.episodes.length > 0);
+
+    if (seasonsToDownload.length == 0) throw new UserInputException("No Episodes found.")
+
+    // select episode(s)
+    if (options.episode) {
+        if (seasonsToDownload.length != 1) {
+            throw new UserInputException("Multiple seasons available. You need to specify one season with --season to use --episodes.");
+        }
+
+        // convert numbers to numbers (there could be non numerical episode-numbers)
+        seasonsToDownload[0].episodes.map((e) => { if (!isNaN(e.number)) e.number = parseInt(e.number); return e });
+
+        const findEpisode = (number) => {
+            if (!isNaN(number)) number = parseInt(number);
+            for (const e of seasonsToDownload[0].episodes) {
+                if (e.number == number) return e;
+            }
+            throw new UserInputException(`Episode "${number}" not found.`)
+        }
+
+        seasonsToDownload[0].episodes = options.episode.split(",").reduce((r, n) => {
+            const bounds = n.split("-");
+            if (bounds.length == 1) {
+                r.push(findEpisode(n));
+            } else if (bounds.length == 2) {
+                const min = seasonsToDownload[0].episodes.indexOf(findEpisode(bounds[0]));
+                const max = seasonsToDownload[0].episodes.indexOf(findEpisode(bounds[1]));
+                for (let i = min; i <= max; i++) r.push(seasonsToDownload[0].episodes[i]); // support non numerical episode numbers
+            } else {
+                throw new UserInputException("Invalid episode number: " + n);
+            }
+            return r
+        }, [])
+
+        // deduplicate episodes
+        seasonsToDownload[0].episodes = seasonsToDownload[0].episodes.filter((s, pos, arr) => arr.indexOf(s) == pos);
     }
 
-    for (const season of list) {
+
+
+    // Remove empty seasons (again)
+    seasonsToDownload = seasonsToDownload.filter((s) => s.episodes.length > 0);
+
+    if (seasonsToDownload.length == 0) throw new UserInputException("No Episodes found.")
+
+
+
+    //console.log(require('util').inspect(seasonsToDownload, false, null, true /* enable colors */))
+
+    console.log("Following episodes will be dowloaded:");
+
+    for (const s of seasonsToDownload) {
+        if (s.name != "") console.log(`Season "${s.name}":`);
+        console.log(s.episodes.map((e) => e.number).join(", "))
+        console.log();
+    }
+
+    for (const season of seasonsToDownload) {
         for (const episode of season.episodes) {
-            console.log("Downloading S(" + pad(origlist.indexOf(season) + 1, 2) + "/" + pad(origlist.length, 2) + ")E(" + pad(season.episodes.indexOf(episode) + 1, 2) + "/" + pad(season.episodes.length, 2) + ") - " + episode.name);
+            console.log(`Downloading S(${pad(seasonsToDownload.indexOf(season) + 1, 2)}/${pad(seasonsToDownload.length, 2)})E(${pad(season.episodes.indexOf(episode) + 1, 2)}/${pad(season.episodes.length, 2)}) - ${episode.name}`);
             await downloadVideoUrl("http://www.crunchyroll.com" + episode.url, resolution, options)
         }
     }

@@ -81,7 +81,7 @@ const run = async () => {
   const download = subparsers.addParser("download", {
     aliases: ["dl"],
     addHelp: true,
-    description: "Downloads video or playlist form URL."
+    description: "Downloads video or series form URL."
   });
   download.addArgument(
     ["-c", "--connections"], {
@@ -96,7 +96,7 @@ const run = async () => {
     ["url"], {
       action: "store",
       type: "string",
-      help: "url of video or playlist"
+      help: "url of video or series"
     }
   );
 
@@ -110,11 +110,19 @@ const run = async () => {
     }
   );
   download.addArgument(
-    ["seasonNumber"], {
+    ["--season", "--seasons"], {
       action: "store",
       type: "string",
-      help: "Download only specified season. Only for playlist-links.",
-      nargs: '?'
+      help: "Season number or a comma-separated list of season numbers to download. Only for series-links. (eg. 01,02)",
+      metavar: "SEASONS"
+    }
+  );
+  download.addArgument(
+    ["--episode", "--episodes"], {
+      action: "store",
+      type: "string",
+      help: "A comma-separated list of episode numbers to download. Only for series-links. Only one season should be available or selected. (eg. 01,03-05,SP2)",
+      metavar: "EPISODES"
     }
   );
   download.addArgument(
@@ -185,7 +193,7 @@ const run = async () => {
     if (/www\.crunchyroll\.com\/[^/]+\/[^/]+-[0-9]+/.exec(args.url)) {
       await CrDl.downloadVideoUrl(args.url, args.resolution, args);
     } else {
-      await CrDl.downloadPlaylistUrl(args.url, args.resolution, args.seasonNumber, args);
+      await CrDl.downloadPlaylistUrl(args.url, args.resolution, args);
     }
   } else if (args.subcommand_name == "language" || args.subcommand_name == "lang") {
     const possibleSubValues = ["enUS", "enGB", "esLA", "esES", "ptBR", "ptPT", "frFR", "deDE", "arME", "itIT", "ruRU",]
