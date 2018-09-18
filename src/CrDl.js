@@ -372,7 +372,7 @@ async function getSubsToInclude(subtitles, options) {
     if (subsToInclude.length > 0) {
         console.log("Following subtitles will be included: ")
         console.table(subsToInclude, ["title", "langCode", "default"]);
-    } else if(!options.hardsub) {
+    } else {
         console.log("No subtitles will be included.")
     }
 
