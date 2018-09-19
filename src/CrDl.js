@@ -300,7 +300,7 @@ async function downloadPlaylistUrl(url, resolution, options) {
     // Remove empty seasons (again)
     seasonsToDownload = seasonsToDownload.filter((s) => s.episodes.length > 0);
 
-    if (seasonsToDownload.length == 0) throw new UserInputException("No Episodes found.")
+    if (seasonsToDownload.length == 0) throw new UserInputException("No Episodes selected.")
 
 
 
