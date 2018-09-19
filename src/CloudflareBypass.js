@@ -88,19 +88,20 @@ class CloudflareBypass {
 
         js = js.replace(/\s{3,}[a-z](?: = |\.).+/g, "").replace("t.length", "" + (urlo.hostname.length))
 
-        // Strip characters that could be used to exit the string context
-        // These characters are not currently used in Cloudflare's arithmetic snippet
-        js = js.replace(/[\n\\']/, "")
-
         if (js.indexOf("toFixed") == -1)
             throw new CloudflareException("Error parsing Cloudflare IUAM Javascript challenge.")
 
+
         // Use vm.runInNewContext to safely evaluate code
         // The sandboxed code cannot use the Node.js standard library
-        js = `require('vm').runInNewContext('${js}', Object.create(null), {timeout: 5000});`
-        const result = eval(js);
+        let result;
+        try {
+            result = require('vm').runInNewContext(js, Object.create(null), { timeout: 5000 });
+        } catch (e) {
+            throw new CloudflareException("Error thrown while executing challenge: " + e.message);
+        }
         if (isNaN(result)) {
-            throw new CloudflareException("Cloudflare IUAM challenge returned unexpected answer.")
+            throw new CloudflareException("Cloudflare IUAM challenge returned unexpected answer.");
         }
         return result;
     }
