@@ -110,11 +110,14 @@ async function login(username, password) {
             followRedirect: false
         });
     } catch (e) {
-        loginPage = e;
-    }
-    if (loginPage.status == 302) {
-        console.log("Already logged in!")
-        return;
+        if (e.status == 302) {
+            console.log("Already logged in!")
+            return;
+        } else if (e.status) {
+            throw new NetworkException("Status " + e.status + ": " + e.statusText);
+        } else {
+            throw e;
+        }
     }
     const loginTokenMatch = /name="login_form\[_token\]" value="([^"]+)" \/>/.exec(loginPage.body)
     if (!loginTokenMatch) {
