@@ -348,10 +348,11 @@ async function getSubsToInclude(subtitles, options) {
         if (!sub) {
             console.error("Subtitles for " + lang + " not available. Skipping...");
         } else {
-            fs.writeFileSync(`${dir}/${await sub.getLanguage()}.ass`, await sub.getData());
+            const filePath = path.join(dir, await sub.getLanguage() + ".ass");
+            fs.writeFileSync(filePath, await sub.getData());
             subsToInclude.push({
                 title: await sub.getTitle(),
-                path: `${dir}/${await sub.getLanguage()}.ass`,
+                path: filePath,
                 language: await sub.getLanguageISO6392T(),
                 langCode: await sub.getLanguage(),
                 default: false

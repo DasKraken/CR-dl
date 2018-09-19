@@ -64,7 +64,7 @@ Eine Staffelnummer oder eine kommagetrennte Liste (ohne Leerzeichen) von Staffel
 Eine kommagetrennte Liste (ohne Leerzeichen) von Episodennummern zum herunterladen. Ein ```-``` (Minus) kann verwendet werden um einen Bereich anzugeben (z.B.: ```01,03-05,SP2```). Funktioniert nur mit Serien-URLs. Falls mehrere Staffeln verfügbar sind, muss man eine mit --season auswählen.
  
 ```-c N, --connections N```
-Anzahl der gleichzeitigen Verbindungen (default: 20)
+Anzahl der gleichzeitigen Verbindungen (default: 5)
 
 ```--subLangs LANGS```
 Eine kommagetrennte Liste (ohne Leerzeichen) an Sprachen die in das Video eingebettet werden sollen. (z.B.: deDE,enUS). Setze auf ```none``` um keine Untertitel einzubetten.

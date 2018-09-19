@@ -61,7 +61,7 @@ A season number or a comma-separated list (without spaces) of season numbers to 
 A comma-separated list of episode numbers to download. A ```-``` (minus) can be used to specify an area (eg. ```01,03-05,SP2```). Works only for series-links. If multiple seasons are available, you must specify one with --season.
  
 ```-c N, --connections N```
-Number of simultaneous connections (default: 20)
+Number of simultaneous connections (default: 5)
 
 ```--subLangs LANGS```
 Specify subtitle languages as a comma separated list to include in video. (eg. deDE,enUS). Set to ```none``` to embed no subtitles.

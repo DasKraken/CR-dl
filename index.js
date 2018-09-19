@@ -85,8 +85,8 @@ const run = async () => {
     ["-c", "--connections"], {
       action: "store",
       type: "int",
-      help: "Number of simultaneous connections (default: 20)",
-      defaultValue: 20,
+      help: "Number of simultaneous connections (default: 5)",
+      defaultValue: 5,
       metavar: "N"
     }
   );
