@@ -204,7 +204,11 @@ async function getEpisodesFormUrl(url) {
     try {
         page = (await httpClientInstance.get(url)).body;
     } catch (e) {
-        console.log("Error " + e.status)
+        if (e.status) {
+            throw new NetworkException("Status " + e.status + ": " + e.statusText);
+        } else {
+            throw e;
+        }
     }
     saveCookieJar();
     const regex = /(?:<a href="([^"]+)" title="([^"]+)"\s+class="portrait-element block-link titlefix episode">[^$]*<span class="series-title block ellipsis" dir="auto">\s*\S+ (\S+))|(?:<a href="#"\s+class="season-dropdown content-menu block text-link strong (?:open)? small-margin-bottom"\s+title="([^"]+)">[^<]+<\/a>)/gm;
