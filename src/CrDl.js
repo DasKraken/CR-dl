@@ -121,7 +121,7 @@ async function login(username, password) {
     }
     const loginTokenMatch = /name="login_form\[_token\]" value="([^"]+)" \/>/.exec(loginPage.body)
     if (!loginTokenMatch) {
-        throw new Error("Error logging in: No login token found.");
+        throw new RuntimeException("Error logging in: No login token found.");
     }
     const token = loginTokenMatch[1];
 
