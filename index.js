@@ -190,10 +190,12 @@ const run = async () => {
     await CrDl.logout();
 
   } else if (args.subcommand_name == "download" || args.subcommand_name == "dl") {
-    if (/www\.crunchyroll\.com\/([a-z-]{1,5}\/)?[^/]+\/[^/]+-[0-9]+/.exec(args.url)) {
+    if (/www\.crunchyroll\.com\/([a-z-]{1,5}\/)?[^/]+\/[^/]+-[0-9]+$/.exec(args.url)) {
       await CrDl.downloadVideoUrl(args.url, args.resolution, args);
-    } else {
+    } else if (/www\.crunchyroll\.com\/([a-z-]{1,5}\/)?[^/]+\/?$/.exec(args.url)) {
       await CrDl.downloadPlaylistUrl(args.url, args.resolution, args);
+    } else {
+      console.log(`Error: Unsupported URL`);
     }
   } else if (args.subcommand_name == "language" || args.subcommand_name == "lang") {
     const possibleSubValues = ["enUS", "enGB", "esLA", "esES", "ptBR", "ptPT", "frFR", "deDE", "arME", "itIT", "ruRU",]
