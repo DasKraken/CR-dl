@@ -104,16 +104,17 @@ async function isLoggedIn() {
 
 async function login(username, password) {
     loadCookieJar();
+    if (await isLoggedIn()) {
+        console.log("Already logged in!");
+        return;
+    }
     let loginPage;
     try {
         loginPage = await cloudflareBypass.get("https://www.crunchyroll.com/login", {
-            followRedirect: false
+            followRedirect: true
         });
     } catch (e) {
-        if (e.status == 302) {
-            console.log("Already logged in!")
-            return;
-        } else if (e.status) {
+        if (e.status) {
             throw new NetworkException("Status " + e.status + ": " + e.statusText);
         } else {
             throw e;
@@ -127,7 +128,7 @@ async function login(username, password) {
 
     let loginSend;
     try {
-        loginSend = (await cloudflareBypass.post("https://www.crunchyroll.com/login", {
+        loginSend = (await cloudflareBypass.post(loginPage.url, {
             "login_form[_token]": token,
             "login_form[name]": username,
             "login_form[password]": password,

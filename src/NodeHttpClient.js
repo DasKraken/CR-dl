@@ -27,6 +27,7 @@ function getResponse(req) {
         body: req.body.toString(),
         status: req.statusCode || 0,
         statusText: req.statusMessage || "",
+        url: req.request.uri.href,
         //headers: req.headers
     };
 }
