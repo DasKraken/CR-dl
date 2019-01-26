@@ -190,7 +190,7 @@ const run = async () => {
     await CrDl.logout();
 
   } else if (args.subcommand_name == "download" || args.subcommand_name == "dl") {
-    if (/www\.crunchyroll\.com\/[^/]+\/[^/]+-[0-9]+/.exec(args.url)) {
+    if (/www\.crunchyroll\.com\/([a-z-]{1,5}\/)?[^/]+\/[^/]+-[0-9]+/.exec(args.url)) {
       await CrDl.downloadVideoUrl(args.url, args.resolution, args);
     } else {
       await CrDl.downloadPlaylistUrl(args.url, args.resolution, args);
