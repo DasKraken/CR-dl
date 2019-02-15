@@ -106,16 +106,20 @@ async function downloadVideoFromM3U(url, dest, options) {
     if (m3uData.items.StreamItem.length > 0) { // Stream List
         return await downloadVideoFromM3U(m3uData.items.StreamItem[0].properties.uri, dest, options)
     } else {
-        const dir = path.join(options.tmpDir, dest + "Data");
+        const dirRelative = dest + "Data";
+        const dir = path.join(options.tmpDir, dirRelative);
+
         mkdirp.sync(dir);
         if (m3uData.properties["EXT-X-KEY"]) {
             const keyURIMatch = m3uData.properties["EXT-X-KEY"].match(/URI="([^"]+)"/)
             if (!keyURIMatch) throw new RuntimeException("No key URI found")
             const keyURI = keyURIMatch[1];
 
-            const keyFile = path.join(dir, getFilenameFromURI(keyURI)).replace(/\\/g, "/");;
+            const keyFile = path.join(dir, getFilenameFromURI(keyURI));
+            const keyFileRelative = path.join(dirRelative, getFilenameFromURI(keyURI)).replace(/\\/g, "/");
+
             await downloadFile(keyURI, keyFile, options);
-            m3uData.properties["EXT-X-KEY"] = m3uData.properties["EXT-X-KEY"].replace(keyURI, keyFile);
+            m3uData.properties["EXT-X-KEY"] = m3uData.properties["EXT-X-KEY"].replace(keyURI, keyFileRelative);
 
         } else {
             throw new RuntimeException("No key found. This should never happen")
@@ -124,7 +128,7 @@ async function downloadVideoFromM3U(url, dest, options) {
         for (const item of m3uData.items.PlaylistItem) {
             const filename = getFilenameFromURI(item.properties.uri);
             const uri = item.properties.uri;
-            item.properties.uri = path.join(dir, filename).replace(/\\/g, "/");
+            item.properties.uri = path.join(dirRelative, filename).replace(/\\/g, "/");
             downloadList.push({
                 url: uri,
                 dest: path.join(dir, filename)
