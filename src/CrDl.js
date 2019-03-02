@@ -97,7 +97,7 @@ function cleanUp(options) {
 
 async function isLoggedIn() {
     loadCookieJar();
-    let res = await httpClientInstance.get("http://www.crunchyroll.com/videos/anime");
+    let res = await cloudflareBypass.get("http://www.crunchyroll.com/videos/anime");
     saveCookieJar();
     return res.body.indexOf("<a href=\"/logout\"") > -1
 }
@@ -153,14 +153,14 @@ async function logout() {
 }
 async function getLang() {
     loadCookieJar();
-    let res = await httpClientInstance.get("http://www.crunchyroll.com/videos/anime");
+    let res = await cloudflareBypass.get("http://www.crunchyroll.com/videos/anime");
     saveCookieJar();
     return res.body.match(/<li><a href="#" onclick="return Localization\.SetLang\(&quot;([A-Za-z]{4})&quot;\);" data-language="[^"]+" class="selected">[^"]+<\/a><\/li>/)[1]
 }
 async function setLang(lang) {
     loadCookieJar();
     try {
-        const loginReq = await httpClientInstance.post("http://www.crunchyroll.com/ajax/", {
+        const loginReq = await cloudflareBypass.post("http://www.crunchyroll.com/ajax/", {
             'req': 'RpcApiTranslation_SetLang',
             'locale': lang,
         });
@@ -203,7 +203,7 @@ async function getEpisodesFormUrl(url) {
     let seasonNum = -1;
     let page;
     try {
-        page = (await httpClientInstance.get(url)).body;
+        page = (await cloudflareBypass.get(url)).body;
     } catch (e) {
         if (e.status) {
             throw new NetworkException("Status " + e.status + ": " + e.statusText);
@@ -406,7 +406,7 @@ async function downloadVideoUrl(url, resolution, options) {
 
     let html;
     try {
-        html = (await httpClientInstance.get(url)).body;
+        html = (await cloudflareBypass.get(url)).body;
     } catch (e) {
         if (e.status) {
             throw new NetworkException("Status " + e.status + ": " + e.statusText);
