@@ -1,6 +1,6 @@
 {
   "name": "cr-dl",
-  "version": "3.0.1",
+  "version": "3.0.3",
   "description": "",
   "main": "src/CrDl.js",
   "scripts": {
@@ -16,8 +16,8 @@
   },
   "dependencies": {
     "argparse": "^1.0.10",
-    "async": "^2.6.0",
-    "cli-progress": "^2.1.0",
+    "async": "^2.6.2",
+    "cli-progress": "^2.1.1",
     "crunchyroll-lib": "^1.2.2",
     "diacritics": "^1.3.0",
     "langs": "^2.0.0",
