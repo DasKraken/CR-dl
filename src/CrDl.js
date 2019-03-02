@@ -152,24 +152,26 @@ async function logout() {
     saveCookieJar();
 }
 async function getLang() {
-    loadCookieJar();
     let res = await cloudflareBypass.get("http://www.crunchyroll.com/videos/anime");
-    saveCookieJar();
-    return res.body.match(/<li><a href="#" onclick="return Localization\.SetLang\(&quot;([A-Za-z]{4})&quot;\);" data-language="[^"]+" class="selected">[^"]+<\/a><\/li>/)[1]
+    return res.body.match(/<a href="[^"]+"\s*onclick="return Localization\.SetLang\('([A-Za-z]{4})', '[^']+', '[^']+'\);"\s*data-language="[^"]+"\s*class="selected">[^<]+<\/a>/)[1]
 }
 async function setLang(lang) {
     loadCookieJar();
-    try {
-        const loginReq = await cloudflareBypass.post("http://www.crunchyroll.com/ajax/", {
-            'req': 'RpcApiTranslation_SetLang',
-            'locale': lang,
-        });
-    } catch (e) { }
+    let res = await cloudflareBypass.get("http://www.crunchyroll.com/videos/anime");
+    let token = res.body.match(/<a href="[^"]+"\s*onclick="return Localization\.SetLang\('[A-Za-z]{4}', '([^']+)', '[^']+'\);"\s*data-language="[^"]+"\s*class="selected">[^<]+<\/a>/)[1]
+
+
+    const loginReq = await cloudflareBypass.post("https://www.crunchyroll.com/ajax/", {
+        'req': 'RpcApiTranslation_SetLang',
+        'locale': lang,
+        '_token': token
+    });
 
     let newLang = await getLang();
     if (newLang == lang) {
         console.log("Language changed to " + lang);
     } else {
+        console.log(loginReq)
         throw new RuntimeException("Couldn't change language. Currently selected: " + newLang)
     }
     saveCookieJar();
