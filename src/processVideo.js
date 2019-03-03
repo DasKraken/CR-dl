@@ -5,7 +5,7 @@ const _cliProgress = require('cli-progress');
 module.exports = function processVideo(input, metadata, subtitles, output, options) {
     return new Promise((resolve, reject) => {
 
-        let command = ["-allowed_extensions", "ALL", "-y", "-i", input];
+        let command = ["-allowed_extensions", "ALL", "-y", "-i", input.replace(/\\/g, "/")];
 
         for (const subtitle of subtitles) {
             command.push("-i", subtitle.path)
