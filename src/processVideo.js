@@ -1,18 +1,14 @@
 const { spawn } = require('child_process');
 const { RuntimeException } = require("./Exceptions");
 const _cliProgress = require('cli-progress');
-const path = require('path');
-
 
 module.exports = function processVideo(input, metadata, subtitles, output, options) {
     return new Promise((resolve, reject) => {
 
-        const workingDirectory = path.dirname(input);
-
-        let command = ["-allowed_extensions", "ALL", "-y", "-i", path.basename(input)];
+        let command = ["-allowed_extensions", "ALL", "-y", "-i", input];
 
         for (const subtitle of subtitles) {
-            command.push("-i", path.relative(workingDirectory, subtitle.path));
+            command.push("-i", subtitle.path)
         }
 
 
@@ -29,7 +25,7 @@ module.exports = function processVideo(input, metadata, subtitles, output, optio
             s++;
         }
 
-        command.push("-c", "copy", path.relative(workingDirectory, output));
+        command.push("-c", "copy", output)
         let bar1;
         if (options.showProgressBar) {
             bar1 = new _cliProgress.Bar({
@@ -42,9 +38,7 @@ module.exports = function processVideo(input, metadata, subtitles, output, optio
         }
 
         //console.log(command)
-        let proc = spawn('ffmpeg', command, {
-            cwd: workingDirectory
-        });
+        let proc = spawn('ffmpeg', command);
         proc.stdout.on('data', function (data) {
             console.log('[ffmpeg]: ' + data);
         });
