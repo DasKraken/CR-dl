@@ -153,12 +153,12 @@ async function logout() {
 }
 async function getLang() {
     let res = await cloudflareBypass.get("http://www.crunchyroll.com/videos/anime");
-    return res.body.match(/<a href="[^"]+"\s*onclick="return Localization\.SetLang\('([A-Za-z]{4})', '[^']+', '[^']+'\);"\s*data-language="[^"]+"\s*class="selected">[^<]+<\/a>/)[1]
+    return res.body.match(/<a href="[^"]+"\s*onclick="return Localization\.SetLang\(\s*'([A-Za-z]{4})',\s*'[^']+',\s*'[^']+'\s*\);"\s*data-language="[^"]+"\s*class="selected">[^<]+<\/a>/)[1]
 }
 async function setLang(lang) {
     loadCookieJar();
     let res = await cloudflareBypass.get("http://www.crunchyroll.com/videos/anime");
-    let token = res.body.match(/<a href="[^"]+"\s*onclick="return Localization\.SetLang\('[A-Za-z]{4}', '([^']+)', '[^']+'\);"\s*data-language="[^"]+"\s*class="selected">[^<]+<\/a>/)[1]
+    let token = res.body.match(/<a href="[^"]+"\s*onclick="return Localization\.SetLang\(\s*'[A-Za-z]{4}',\s*'([^']+)',\s*'[^']+'\s*\);"\s*data-language="[^"]+"\s*class="selected">[^<]+<\/a>/)[1]
 
 
     const loginReq = await cloudflareBypass.post("https://www.crunchyroll.com/ajax/", {
