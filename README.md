@@ -58,7 +58,7 @@ cr-dl download <URL> [resolution]
 A season number or a comma-separated list (without spaces) of season numbers to download (eg. ```1,2```). Works only for series-links. Note: Season 1 is the bottom-most season on the website.
 
 ```--episode EPISODE, --episodes EPISODES```
-A comma-separated list of episode numbers to download. A ```-``` (minus) can be used to specify an area (eg. ```01,03-05,SP2```). Works only for series-links. If multiple seasons are available, you must specify one with --season.
+A comma-separated list of episode numbers to download. A ```-``` (minus) can be used to specify an area (eg. ```01,03-05,SP2```). If a given episode number exists in multiple seasons, you must specify one with --season.
  
 ```-c N, --connections N```
 Number of simultaneous connections (default: 5)

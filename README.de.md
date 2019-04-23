@@ -61,7 +61,7 @@ Folgende optionale Arguments können mit 'download' verwendet werden:
 Eine Staffelnummer oder eine kommagetrennte Liste (ohne Leerzeichen) von Staffelnummern zum Herunterladen (z.B.: ```1,2```). Funktioniert nur mit Serien-URLs. Anmerkung: Staffel 1 ist die unterste Staffel auf der Webseite.
 
 ```--episode EPISODE, --episodes EPISODES```
-Eine kommagetrennte Liste (ohne Leerzeichen) von Episodennummern zum herunterladen. Ein ```-``` (Minus) kann verwendet werden um einen Bereich anzugeben (z.B.: ```01,03-05,SP2```). Funktioniert nur mit Serien-URLs. Falls mehrere Staffeln verfügbar sind, muss man eine mit --season auswählen.
+Eine kommagetrennte Liste (ohne Leerzeichen) von Episodennummern zum herunterladen. Ein ```-``` (Minus) kann verwendet werden um einen Bereich anzugeben (z.B.: ```01,03-05,SP2```). Funktioniert nur mit Serien-URLs. Falls eine angegebene Episodennummer in mehreren Staffeln verfügbar ist, muss eine Staffel mit --season ausgewählt werden.
  
 ```-c N, --connections N```
 Anzahl der gleichzeitigen Verbindungen (default: 5)

@@ -269,37 +269,72 @@ async function downloadPlaylistUrl(url, resolution, options) {
 
     // select episode(s)
     if (options.episode) {
-        if (seasonsToDownload.length != 1) {
-            throw new UserInputException("Multiple seasons available. You need to specify one season with --season to use --episodes.");
-        }
-
         // convert numbers to numbers (there could be non numerical episode-numbers)
-        seasonsToDownload[0].episodes.map((e) => { if (!isNaN(e.number)) e.number = parseInt(e.number); return e });
+        seasonsToDownload.forEach(s => s.episodes = s.episodes.map((e) => { if (!isNaN(e.number)) e.number = parseInt(e.number); return e }));
 
-        const findEpisode = (number) => {
+        const getEpisodeFromNumber = (number) => {
             if (!isNaN(number)) number = parseInt(number);
-            for (const e of seasonsToDownload[0].episodes) {
-                if (e.number == number) return e;
+            const results = [];
+            for (let seasonIndex = 0; seasonIndex < seasonsToDownload.length; seasonIndex++) {
+                const season = seasonsToDownload[seasonIndex].episodes;
+                for (let episodeIndex = 0; episodeIndex < season.length; episodeIndex++) {
+                    const episode = season[episodeIndex];
+                    if (episode.number == number) {
+                        results.push({ seasonIndex, episodeIndex })
+                    }
+                }
             }
-            throw new UserInputException(`Episode "${number}" not found.`)
+            if (results.length == 0) {
+                throw new UserInputException(`Episode "${number}" not found.`)
+            } else if (results.length == 1) {
+                return results[0];
+            } else {
+                let areAllMatchesInSameSeason = true;
+                for (let index = 0; index < results.length - 1; index++) {
+                    if (results[index].seasonIndex != results[index + 1].seasonIndex)
+                        areAllMatchesInSameSeason = false;
+                }
+                if (areAllMatchesInSameSeason) {
+                    console.log(`Warning: Multiple episodes found matching "${number}". Selecting first.`)
+                    return results[0];
+                } else {
+                    throw new UserInputException(`Collision between seasons for episode "${number}". Please specify one season with --season to use --episodes.`)
+                }
+            }
+        }
+        const addEpisodesInRange = (result, start, end) => {
+            let curSeason = start.seasonIndex;
+            let curEpisode = start.episodeIndex;
+
+            while (curSeason < end.seasonIndex || (curSeason == end.seasonIndex && curEpisode <= end.episodeIndex)) {
+                result.push(seasonsToDownload[curSeason].episodes[curEpisode]);
+
+                if (curEpisode < seasonsToDownload[curSeason].episodes.length - 1) {
+                    curEpisode++;
+                } else {
+                    curSeason++;
+                    curEpisode = 0;
+                }
+            }
         }
 
-        seasonsToDownload[0].episodes = options.episode.split(",").reduce((r, n) => {
+
+        let episodesToDownload = options.episode.split(",").reduce((r, n) => {
             const bounds = n.split("-");
             if (bounds.length == 1) {
-                r.push(findEpisode(n));
+                let ep = getEpisodeFromNumber(n);
+                r.push(seasonsToDownload[ep.seasonIndex].episodes[ep.episodeIndex]);
             } else if (bounds.length == 2) {
-                const min = seasonsToDownload[0].episodes.indexOf(findEpisode(bounds[0]));
-                const max = seasonsToDownload[0].episodes.indexOf(findEpisode(bounds[1]));
-                for (let i = min; i <= max; i++) r.push(seasonsToDownload[0].episodes[i]); // support non numerical episode numbers
+                const min = getEpisodeFromNumber(bounds[0]);
+                const max = getEpisodeFromNumber(bounds[1]);
+                addEpisodesInRange(r, min, max);
             } else {
                 throw new UserInputException("Invalid episode number: " + n);
             }
             return r
         }, [])
 
-        // deduplicate episodes
-        seasonsToDownload[0].episodes = seasonsToDownload[0].episodes.filter((s, pos, arr) => arr.indexOf(s) == pos);
+        seasonsToDownload.forEach(value => { value.episodes = value.episodes.filter(ep => episodesToDownload.indexOf(ep) > -1) })
     }
 
 
