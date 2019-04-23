@@ -10,7 +10,7 @@ Windows users can get a Windows bundle from the [Releases Page](https://github.c
 
 ### Without using the bundle:
 
-CR-dl requires [node.js (v10)](https://nodejs.org) and [ffmpeg](https://www.ffmpeg.org) to be installed on the system and available in PATH
+CR-dl requires [node.js (v10 or later)](https://nodejs.org) and [ffmpeg](https://www.ffmpeg.org) to be installed on the system and available in PATH
 
 After these are installed run:
 
@@ -26,48 +26,48 @@ CR-dl is a CLI-Tool and can only be run from the terminal.
 Following commands are available:
 
 
-Logging in into Crunchyroll to be able accessing premium content (This will create a file 'cookies.data' to store the session):
+Log in into Crunchyroll to be get access to premium content (This will create a file 'cookies.data' to store the session):
 ```
 cr-dl login <username> <password>
 ```
 
 
-Logging out:
+Log out:
 ```
 cr-dl logout
 ```
 
-Changing the language of Crunchyroll. This will change the language of the metadata for file naming. 
+Change the language of Crunchyroll. This will change the language of the metadata for file naming. 
 Note 1: This wont change the default subtitle language.
 Note 2: Series that aren't available in selected language may not work.
-Allowed are: enUS, enGB, esLA, esES, ptBR, ptPT, frFR, deDE, arME, itIT, ruRU
+Allowed values are: enUS, enGB, esLA, esES, ptBR, ptPT, frFR, deDE, arME, itIT, ruRU
 ```
 cr-dl language LANG
 ```
 
 
-Downloading a video or a series from URL. A resolution can be provided optionally (360p, 480p, 720p, 1080p):
+Downloading a video or a series from a URL. Optionally a resolution can be provided (360p, 480p, 720p, 1080p):
 ```
 cr-dl download <URL> [resolution]
 ```
 
 ### Optional arguments:
- Following optional arguments can be provided to 'download':
+Following optional arguments can be provided to 'download':
 
 ```--season SEASON, --seasons SEASONS```
-A season number or a comma-separated list (without spaces) of season numbers to download (eg. ```1,2```). Works only for series-links. Note: Season 1 is the bottom-most season on the website.
+A season number or a comma-separated list (without spaces) of season numbers to download. A ```-``` (minus) can be used to specify an interval (e.g. ```1,3-5```). Works only for series-links. Note: Season 1 is the bottom-most season on the website.
 
 ```--episode EPISODE, --episodes EPISODES```
-A comma-separated list of episode numbers to download. A ```-``` (minus) can be used to specify an area (eg. ```01,03-05,SP2```). If a given episode number exists in multiple seasons, you must specify one with --season.
+A comma-separated list of episode numbers to download. A ```-``` (minus) can be used to specify an interval (e.g. ```01,03-05,SP2```). If a given episode number exists in multiple seasons, you must specify one with --season.
  
 ```-c N, --connections N```
 Number of simultaneous connections (default: 5)
 
 ```--subLangs LANGS```
-Specify subtitle languages as a comma separated list to include in video. (eg. deDE,enUS). Set to ```none``` to embed no subtitles.
+Specify subtitle languages as a comma separated list to include in video. (e.g. deDE,enUS). Set to ```none``` to embed no subtitles.
 
 ```-l LANG, --subDefault LANG```
-Specify subtitle language to be set as default. (eg.enUS). (Default: if --subLangs defined: first entry, otherwise: crunchyroll default)
+Specify subtitle language to be set as default. (e.g. enUS). (Default: if --subLangs defined: first entry, otherwise: crunchyroll default)
 
 ```--listSubs```
 Don't download. Show list of available subtitle languages.
@@ -76,7 +76,7 @@ Don't download. Show list of available subtitle languages.
 Download only subtitles. No Video.
 
 ```--hardsub```
-Download hardsubbed video stream. Only one subtitle specified by --subDefault will be included.
+Download hardsubbed video stream. Only one subtitle language specified by --subDefault will be included.
 
 ```--maxAttempts N```
 Max number of download attempts before aborting. (Default: 5)
@@ -126,7 +126,7 @@ cr-dl login "MyName" "Pass123"
 
 Download episode 4 of HINAMATSURI:
 ```
-cr-dl download http://www.crunchyroll.com/hinamatsuri/episode-4-disownment-rock-n-roll-fever-769303"
+cr-dl download http://www.crunchyroll.com/hinamatsuri/episode-4-disownment-rock-n-roll-fever-769303
 ```
 
 
@@ -148,7 +148,7 @@ cr-dl download http://www.crunchyroll.com/bungo-stray-dogs --seasons 6,7
 ```
 
 
-Download episodes 1,3,4,5 and special 2 of DITF:
+Download episodes 1,3,4,5 and special 2 of DITF (SP2 is not available anymore):
 ```
 cr-dl download http://www.crunchyroll.com/darling-in-the-franxx --episodes 1,3-5,SP2
 ```
@@ -169,7 +169,7 @@ cr-dl download -o "{seasonTitle!scene}.{resolution}.WEB.x264-byME/{seasonTitle!s
 ## License
 MIT License
 
-Copyright (c) 2018 DerKraken
+Copyright (c) 2019 DerKraken
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

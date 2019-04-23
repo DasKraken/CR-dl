@@ -10,7 +10,7 @@ Windows Nutzer können von der [Releases Seite](https://github.com/DasKraken/CR-
 
 ### Falls das Bundle nicht verwendet wird:
 
-CR-dl erfordert, dass [node.js](https://nodejs.org) und [ffmpeg](https://www.ffmpeg.org) auf dem System installiert sind und über PATH erreichbar sind.
+CR-dl erfordert, dass [node.js (v10 oder höher)](https://nodejs.org) und [ffmpeg](https://www.ffmpeg.org) auf dem System installiert sind und über PATH erreichbar sind.
 
 Nachdem sie installiert sind, führt aus:
 
@@ -55,13 +55,13 @@ cr-dl download <URL> [auflösung]
 
 
 ### Optionale Argumente:
-Folgende optionale Arguments können mit 'download' verwendet werden:
+Folgende optionale Argumente können mit 'download' verwendet werden:
 
 ```--season SEASON, --seasons SEASONS```
-Eine Staffelnummer oder eine kommagetrennte Liste (ohne Leerzeichen) von Staffelnummern zum Herunterladen (z.B.: ```1,2```). Funktioniert nur mit Serien-URLs. Anmerkung: Staffel 1 ist die unterste Staffel auf der Webseite.
+Eine Staffelnummer oder eine kommagetrennte Liste (ohne Leerzeichen) von Staffelnummern zum Herunterladen. Ein ```-``` (Minus) kann verwendet werden um einen Interval anzugeben (z.B.: ```1,3-5```). Funktioniert nur mit Serien-URLs. Anmerkung: Staffel 1 ist die unterste Staffel auf der Webseite.
 
 ```--episode EPISODE, --episodes EPISODES```
-Eine kommagetrennte Liste (ohne Leerzeichen) von Episodennummern zum herunterladen. Ein ```-``` (Minus) kann verwendet werden um einen Bereich anzugeben (z.B.: ```01,03-05,SP2```). Funktioniert nur mit Serien-URLs. Falls eine angegebene Episodennummer in mehreren Staffeln verfügbar ist, muss eine Staffel mit --season ausgewählt werden.
+Eine kommagetrennte Liste (ohne Leerzeichen) von Episodennummern zum Herunterladen. Ein ```-``` (Minus) kann verwendet werden um einen Interval anzugeben (z.B.: ```01,03-05,SP2```). Funktioniert nur mit Serien-URLs. Falls eine angegebene Episodennummer in mehreren Staffeln verfügbar ist, muss eine Staffel mit --season ausgewählt werden.
  
 ```-c N, --connections N```
 Anzahl der gleichzeitigen Verbindungen (default: 5)
@@ -70,10 +70,10 @@ Anzahl der gleichzeitigen Verbindungen (default: 5)
 Eine kommagetrennte Liste (ohne Leerzeichen) an Sprachen die in das Video eingebettet werden sollen. (z.B.: deDE,enUS). Setze auf ```none``` um keine Untertitel einzubetten.
 
 ```-l LANG, --subDefault LANG```
-Sprache, dessen Untertitel als Standard ausgewählt werden sollen. (z.B: enUS). Standard ist der erste Eintrag von --subLangs, falls angegeben, ansonsten CR-Standard.
+Sprache, dessen Untertitel als Standard ausgewählt werden sollen. (z.B: enUS). Standard ist, falls angegeben, der erste Eintrag von --subLangs, ansonsten CR-Standard.
 
 ```--listSubs```
-Video nicht runterladen. Zeigt nur Liste an verfügbaren Sprachen an.
+Video nicht herunterladen. Zeigt nur Liste an verfügbaren Sprachen an.
 
 ```--subsOnly```
 Lade nur Untertitel herunter. Kein Video.
@@ -107,15 +107,15 @@ Erlaubt sind:
 
 **{resolution}**: Auflösung vom Video. z.B.: 1080p
 
-Zusätzlich kann man **!scene** anhängen z.B. ```{seasonTitle!scene}``` um es zu einem durch Punkte separierten Titel zu konvertieren, wie es in Szene-Releases verwendet wird. 
+Zusätzlich kann man **!scene** anhängen z.B. ```{seasonTitle!scene}``` um es zu einem durch Punkte separierten Titel zu konvertieren, wie es in Scene-Releases verwendet wird. 
 Z.B.: **"Food Wars! Shokugeki no Sōma" => "Food.Wars.Shokugeki.no.Soma"**
 
 ### Templatebeispiele:
-Benennung es wie ein Szene-Release:
+Benenne es wie ein Szene-Release:
 
     -o "{seasonTitle!scene}.{resolution}.WEB.x264-byME/{seasonTitle!scene}.E{episodeNumber}.{resolution}.WEB.x264-byME.mkv"
 
-Benennung es wie ein Fansub:
+Benenne es wie ein Fansub:
 
     -o "[MySubs] {seasonTitle} - {episodeNumber} [{resolution}].mkv"
 
@@ -130,7 +130,7 @@ cr-dl login "MyName" "Pass123"
 
 Episode 4 von HINAMATSURI herunterladen: (in 1080p)
 ```
-cr-dl download http://www.crunchyroll.com/hinamatsuri/episode-4-disownment-rock-n-roll-fever-769303"
+cr-dl download http://www.crunchyroll.com/hinamatsuri/episode-4-disownment-rock-n-roll-fever-769303
 ```
 
 
@@ -152,19 +152,19 @@ cr-dl download http://www.crunchyroll.com/bungo-stray-dogs --seasons 6,7
 ```
 
 
-Lädt die Episoden 1,3,4,5 und Spezial 2 von DITF:
+Lädt die Episoden 1,3,4,5 und Spezial 2 von DITF (SP2 nicht mehr verfügbar):
 ```
 cr-dl download http://www.crunchyroll.com/darling-in-the-franxx --episodes 1,3-5,SP2
 ```
 
 
-Lädt Video mit deutschen und englischen Untertiteln runter und setzt deutsch als Standard:
+Lädt Video mit deutschen und englischen Untertiteln herunter und setzt deutsch als Standard:
 ```
 cr-dl download --subLangs deDE,enUS URL
 ```
 
 
-Lädt video(s) und bennent es wie ein Scene-Release:
+Lädt Video(s) und bennent es wie ein Scene-Release:
 ```
 cr-dl download -o "{seasonTitle!scene}.{resolution}.WEB.x264-byME/{seasonTitle!scene}.E{episodeNumber}.{resolution}.WEB.x264-byME.mkv" URL
 ```
@@ -174,7 +174,7 @@ cr-dl download -o "{seasonTitle!scene}.{resolution}.WEB.x264-byME/{seasonTitle!s
 ## Lizenz
 MIT License
 
-Copyright (c) 2018 DerKraken
+Copyright (c) 2019 DerKraken
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
