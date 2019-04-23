@@ -251,10 +251,23 @@ async function downloadPlaylistUrl(url, resolution, options) {
 
     // select season(s)
     if (options.season) {
-        const wantedSeasons = options.season.split(",").map((n) => {
-            if (isNaN(n) || n == "") throw new UserInputException(`Season number "${n}" invalid.`);
-            return parseInt(n) - 1
-        });
+        const wantedSeasons = options.season.split(",").reduce((r, n) => {
+            const bounds = n.split("-");
+
+            if (bounds.length == 1) {
+                if (isNaN(bounds[0]) || bounds[0] == "") throw new UserInputException(`Season number "${bounds[0]}" invalid.`);
+                r.push(parseInt(bounds[0]) - 1);
+            } else if (bounds.length == 2) {
+                if (isNaN(bounds[0]) || bounds[0] == "") throw new UserInputException(`Season number "${bounds[0]}" invalid.`);
+                if (isNaN(bounds[1]) || bounds[1] == "") throw new UserInputException(`Season number "${bounds[1]}" invalid.`);
+                for (let i = parseInt(bounds[0]); i <= parseInt(bounds[1]); i++) {
+                    r.push(i - 1);
+                }
+            } else {
+                throw new UserInputException(`Season number "${n}" invalid.`);
+            }
+            return r;
+        }, []);
         seasonsToDownload = [];
         for (const s of wantedSeasons) {
             if (!list[s]) throw new UserInputException(`Season ${s + 1} not available.`);
