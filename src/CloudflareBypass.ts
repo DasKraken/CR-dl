@@ -1,4 +1,4 @@
-const { CloudflareException } = require("./Exceptions");
+import { CloudflareException } from "./Exceptions";
 
 function timeout(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -20,11 +20,12 @@ function processBody(body) {
         return body;
     }
 }
-class CloudflareBypass {
+export default class CloudflareBypass {
+    httpClient;
     constructor(httpClient) {
         this.httpClient = httpClient;
     }
-    async get(url, options) {
+    async get(url, options?) {
         try {
             return await this.httpClient.get(url, options)
         } catch (response) {
@@ -64,7 +65,7 @@ class CloudflareBypass {
             }
         }
     }
-    async post(url, body, options) {
+    async post(url, body, options?) {
         return await this.httpClient.post(url, body, options);
     }
 
@@ -106,4 +107,3 @@ class CloudflareBypass {
         return result;
     }
 }
-module.exports = CloudflareBypass

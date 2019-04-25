@@ -1,14 +1,14 @@
-const {
+import {
     RuntimeException,
     NetworkException
-} = require("./Exceptions");
-const request = require("request");
-const fs = require("fs");
-const _cliProgress = require('cli-progress');
-const ListDownloader = require("./ListDownloader");
-const prettyBytes = require('pretty-bytes');
-const mkdirp = require("mkdirp");
-const path = require("path")
+} from "./Exceptions";
+import * as request from "request";
+import * as fs from "fs";
+import * as _cliProgress from "cli-progress";
+import ListDownloader from "./ListDownloader";
+import * as prettyBytes from 'pretty-bytes';
+import * as mkdirp from "mkdirp";
+import * as path from "path";
 
 var m3u8 = require('m3u8');
 require('m3u8/m3u/AttributeList').dataTypes["frame-rate"] = "decimal-floating-point";
@@ -73,7 +73,7 @@ async function downloadString(uri, options) {
                     timeout: 20000
                 }, (error, response, body) => {
                     if (error) {
-                        reject(new NetworkException(e.message));
+                        reject(new NetworkException(error.message));
                         return;
                     }
                     if (response.statusCode != 200) {
@@ -96,13 +96,13 @@ async function downloadString(uri, options) {
 }
 
 
-async function downloadVideoFromM3U(url, dest, options) {
+export default async function downloadVideoFromM3U(url, dest, options) {
     options = Object.assign({}, options);
     options.connections = options.connections || 20;
     options.maxAttempts = options.maxAttempts || 5;
     options.abort = false; // when set to true, connections should not be reattempted
     const m3u = await downloadString(url, options)
-    const m3uData = await parseM3U(m3u);
+    const m3uData: any = await parseM3U(m3u);
     if (m3uData.items.StreamItem.length > 0) { // Stream List
         return await downloadVideoFromM3U(m3uData.items.StreamItem[0].properties.uri, dest, options)
     } else {
@@ -178,5 +178,3 @@ async function downloadVideoFromM3U(url, dest, options) {
         return m3u8File;
     }
 }
-
-module.exports = downloadVideoFromM3U;

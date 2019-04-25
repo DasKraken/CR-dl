@@ -1,8 +1,8 @@
-const { spawn } = require('child_process');
-const { RuntimeException } = require("./Exceptions");
-const _cliProgress = require('cli-progress');
+import { spawn } from 'child_process';
+import { RuntimeException} from "./Exceptions";
+import * as _cliProgress from "cli-progress";
 
-module.exports = function processVideo(input, metadata, subtitles, output, options) {
+export default function processVideo(input, metadata, subtitles, output, options) {
     return new Promise((resolve, reject) => {
 
         let command = ["-allowed_extensions", "ALL", "-y", "-i", input.replace(/\\/g, "/")];
@@ -83,7 +83,7 @@ module.exports = function processVideo(input, metadata, subtitles, output, optio
             }
         });
         proc.on('error', function (err) {
-            throw new RuntimeException(err)
+            throw new RuntimeException(err.message)
         })
     });
 }

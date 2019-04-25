@@ -9,7 +9,7 @@ const fs = require("fs");
 const EventEmitter = require('events');
 
 
-class ListDownloader extends EventEmitter {
+export default class ListDownloader extends EventEmitter {
     constructor(list, options) {
         super();
         this.list = list;
@@ -137,4 +137,3 @@ class ListDownloader extends EventEmitter {
         });
     }
 }
-module.exports = ListDownloader;

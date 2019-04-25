@@ -1,4 +1,5 @@
 dist
+lib
 cookies.data
 node_modules
 *.bat

@@ -1,13 +1,13 @@
-const fs = require("fs");
+import * as fs from "fs";
 const removeDiacritics = require('diacritics').remove;
 
-function pad(num, size) {
+export function pad(num, size) {
     var s = num + "";
     while (s.length < size) s = "0" + s;
     return s;
 }
 
-function deleteFolderRecursive(path) {
+export function deleteFolderRecursive(path) {
     if (fs.existsSync(path)) {
         fs.readdirSync(path).forEach(function (file, index) {
             var curPath = path + "/" + file;
@@ -21,11 +21,11 @@ function deleteFolderRecursive(path) {
     }
 };
 
-function toFilename(str) {
+export function toFilename(str) {
     return str.replace(/[\\/:*?"<>|]+/g, "_")
 }
 
-function formatScene(s) {
+export function formatScene(s) {
     s = removeDiacritics(s);
     s = s.replace(/[^A-Za-z0-9\._-]/g, ".");
     s = s.replace(/\.{2,}/g, ".");
@@ -36,7 +36,3 @@ function formatScene(s) {
     s = s.replace(/[._-]$/, "");
     return s;
 }
-
-
-
-module.exports = { pad, deleteFolderRecursive, toFilename, formatScene };

@@ -1,7 +1,7 @@
-const request = require('request');
+import * as request from 'request';
 let jar = request.jar()
 
-function setCookieJar(cjar) {
+export function setCookieJar(cjar) {
     jar = cjar;
 }
 
@@ -31,7 +31,7 @@ function getResponse(req) {
         //headers: req.headers
     };
 }
-class NodeHttpClient {
+export class NodeHttpClient {
     async get(url, options) {
         return await this.method('GET', url, undefined, options);
     }
@@ -67,10 +67,4 @@ class NodeHttpClient {
             });
         });
     }
-}
-
-
-module.exports = {
-    NodeHttpClient,
-    setCookieJar
 }

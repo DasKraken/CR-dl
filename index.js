@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
-const CrDl = require("./src/CrDl");
+const CrDl = require("./lib/CrDl");
 const {
   spawn
 } = require('child_process');
 const {
   UserInputException,
   CloudflareException
-} = require("./src/Exceptions");
+} = require("./lib/Exceptions");
 
 
 function verifyFfmpeg() {

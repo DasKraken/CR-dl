@@ -1,42 +1,36 @@
-// @ts-check
-const request = require('request');
-const {
+import request = require('request');
+import {
     NodeHttpClient,
     setCookieJar
-} = require("./NodeHttpClient");
-const CloudflareBypass = require("./CloudflareBypass");
-const {
+} from "./NodeHttpClient";
+import CloudflareBypass from "./CloudflareBypass";
+import {
     UserInputException,
     RuntimeException,
     NetworkException
-} = require("./Exceptions");
-const downloadVideoFromM3U = require("./m3u-download");
-const processVideo = require("./processVideo");
-const {
-    MediaLegacyPlayer,
-    setHttpClientL
-} = require("./MediaLegacyPlayer");
-const {
+} from "./Exceptions";
+import downloadVideoFromM3U from "./m3u-download";
+import processVideo from "./processVideo";
+import {
     MediaVilosPlayer,
     setHttpClientV
-} = require("./MediaVilosPlayer");
-const fs = require("fs");
-let format = require('string-format')
-const mkdirp = require('mkdirp');
-const path = require('path');
-const { pad, deleteFolderRecursive, toFilename, formatScene } = require('./Utils');
+} from "./MediaVilosPlayer";
+import * as fs from "fs";
+import * as format_ from 'string-format';
+import * as mkdirp from 'mkdirp';
+import * as path from 'path';
+import { pad, deleteFolderRecursive, toFilename, formatScene } from './Utils';
 
 let jar = request.jar()
 setCookieJar(jar);
 
 // Set the Http client to Node
-setHttpClientL(NodeHttpClient);
 setHttpClientV(NodeHttpClient);
 
 const httpClientInstance = new NodeHttpClient();
 const cloudflareBypass = new CloudflareBypass(httpClientInstance);
 
-format = format.create({
+const format = format_.create({
     scene: formatScene
 })
 
@@ -468,8 +462,9 @@ async function downloadVideoUrl(url, resolution, options) {
     let media;
     if (html.indexOf("vilos.config.media") == -1) {
         // Flash Player
-        console.log("(Flash Player)")
-        media = new MediaLegacyPlayer(html, url);
+        //console.log("(Flash Player)")
+        throw new Error("Player not supported")
+        //media = new MediaLegacyPlayer(html, url);
     } else {
         // Vilos Player
         console.log("(HTML5 Player)")

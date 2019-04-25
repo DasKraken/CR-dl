@@ -1,7 +1,6 @@
-// @ts-check
-const { UserInputException } = require("./Exceptions");
-const langs = require('langs');
-const m3u8 = require('m3u8');
+import { UserInputException } from "./Exceptions";
+import * as langs from 'langs';
+import * as m3u8 from 'm3u8';
 function parseM3U(data) {
     return new Promise((resolve, reject) => {
         const parser = m3u8.createStream();
@@ -24,6 +23,8 @@ function parseM3U(data) {
 let _httpClient;
 
 class SubtitleVilosPlayer {
+    _sub;
+    _isDefault;
     constructor(sub, isDefault) {
         this._sub = sub;
         this._isDefault = isDefault;
@@ -46,6 +47,9 @@ class SubtitleVilosPlayer {
 }
 
 class StreamVilosPlayer {
+    _stream;
+    _hardsubLang;
+    _audioLang;
     constructor(stream, hardsubLang, audioLang) {
         this._stream = stream;
         this._hardsubLang = hardsubLang;
@@ -68,8 +72,11 @@ class StreamVilosPlayer {
     }
 }
 
-class MediaVilosPlayer {
-
+export class MediaVilosPlayer {
+    _html;
+    _url;
+    _language;
+    _config;
     constructor(html, url) {
         this._html = html;
         this._url = url;
@@ -127,7 +134,7 @@ class MediaVilosPlayer {
         await this._loadStreamData(selectedStream);
         // selectedStream is a group of Streams in different resolutions. We need to filter out one resolution.
 
-        const m3uData = await parseM3U(selectedStream.data);
+        const m3uData: any = await parseM3U(selectedStream.data);
         const streamList = [];
         for (const streamItem of m3uData.items.StreamItem) {
             if (streamItem.attributes.attributes.resolution[1] == resolution) {
@@ -155,8 +162,6 @@ class MediaVilosPlayer {
     }
 }
 
-function setHttpClientV(httpClient) {
+export function setHttpClientV(httpClient) {
     _httpClient = new httpClient();;
 }
-
-module.exports = { MediaVilosPlayer, setHttpClientV }
