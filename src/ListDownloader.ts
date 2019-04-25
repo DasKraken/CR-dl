@@ -1,15 +1,29 @@
-const {
+import {
     UserInputException,
     RuntimeException,
     NetworkException
-} = require("./Exceptions");
-const request = require("request");
-const async = require("async");
-const fs = require("fs");
-const EventEmitter = require('events');
+} from "./Exceptions";
+import * as request from "request";
+import * as async from "async";
+import * as fs from "fs";
+import { EventEmitter } from "events";
 
 
 export default class ListDownloader extends EventEmitter {
+    list: any[];
+    options: any;
+    abort: boolean;
+
+    filesInProgress: number;
+
+    finishedFiles: number;
+    downloadedSize: number;
+    estimatedSize: number;
+
+    speed: number;
+    lastSpeedCheck: number;
+    downloadedSinceCheck: number;
+
     constructor(list, options) {
         super();
         this.list = list;
@@ -73,7 +87,7 @@ export default class ListDownloader extends EventEmitter {
         }
 
     }
-    async downloadFile(index) {
+    async downloadFile(index: number) {
         this.filesInProgress++;
 
         const file = this.list[index];
@@ -122,8 +136,8 @@ export default class ListDownloader extends EventEmitter {
         this.lastSpeedCheck = Date.now();
         this.downloadedSinceCheck = 0;
         return new Promise((resolve, reject) => {
-            async.forEachOfLimit(this.list, this.options.connections, (value, key, callback) => {
-                this.downloadFile(key).then(callback, callback)
+            async.forEachOfLimit(this.list, this.options.connections, (value, key: number, callback) => {
+                this.downloadFile(key).then(() => { callback() }, callback)
             }, err => {
                 if (err) {
                     this.abort = true;

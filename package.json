@@ -16,6 +16,7 @@
     "node": ">=10.1.0"
   },
   "dependencies": {
+    "@types/async": "^2.4.1",
     "argparse": "^1.0.10",
     "async": "^2.6.2",
     "cli-progress": "^2.1.1",

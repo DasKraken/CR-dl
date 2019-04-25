@@ -1,4 +1,4 @@
-import request = require('request');
+import * as request from 'request';
 import {
     NodeHttpClient,
     setCookieJar
@@ -46,7 +46,7 @@ function loadCookieJar() {
     }
 }
 
-function loadAltCookies(c) {
+function loadAltCookies(c: string) {
     const out = {
         "version": "tough-cookie@2.3.4",
         "storeType": "MemoryCookieStore",
@@ -82,7 +82,7 @@ function saveCookieJar() {
     fs.writeFileSync("cookies.data", JSON.stringify(jar._jar.serializeSync()));
 }
 
-export function cleanUp(options) {
+export function cleanUp(options?: { tmpDir: string }) {
     const dir = (options && options.tmpDir) || "tmp/";
     try {
         deleteFolderRecursive(dir);
@@ -96,7 +96,7 @@ export async function isLoggedIn() {
     return res.body.indexOf("<a href=\"/logout\"") > -1
 }
 
-export async function login(username, password) {
+export async function login(username: string, password: string) {
     loadCookieJar();
     if (await isLoggedIn()) {
         console.log("Already logged in!");
@@ -149,7 +149,7 @@ export async function getLang() {
     let res = await cloudflareBypass.get("http://www.crunchyroll.com/videos/anime");
     return res.body.match(/<a href="[^"]+"\s*onclick="return Localization\.SetLang\(\s*'([A-Za-z]{4})',\s*'[^']+',\s*'[^']+'\s*\);"\s*data-language="[^"]+"\s*class="selected">[^<]+<\/a>/)[1]
 }
-export async function setLang(lang) {
+export async function setLang(lang: string) {
     loadCookieJar();
     let res = await cloudflareBypass.get("http://www.crunchyroll.com/videos/anime");
     let token = res.body.match(/<a href="[^"]+"\s*onclick="return Localization\.SetLang\(\s*'[A-Za-z]{4}',\s*'([^']+)',\s*'[^']+'\s*\);"\s*data-language="[^"]+"\s*class="selected">[^<]+<\/a>/)[1]
@@ -171,11 +171,11 @@ export async function setLang(lang) {
     saveCookieJar();
 }
 
-async function getMaxWantedResolution(availableResolutions, res) {
+async function getMaxWantedResolution(availableResolutions: number[], res: number | string) {
     if (typeof res == "string" && res.endsWith("p")) {
         res = res.substr(0, res.length - 1);
     }
-    res = parseInt(res)
+    res = parseInt(<string>res);
     if (isNaN(res)) throw new UserInputException("Invalid resolution.");
 
     if (availableResolutions.indexOf(res) > -1) {
@@ -193,9 +193,19 @@ async function getMaxWantedResolution(availableResolutions, res) {
 
 }
 
-async function getEpisodesFormUrl(url) {
+interface Episode {
+    url: string;
+    name: string;
+    number: string; // Episode number can also be non numerical
+}
+interface Season {
+    name: string;
+    episodes: Episode[];
+}
+
+async function getEpisodesFormUrl(url: string) {
     loadCookieJar();
-    let list = [];
+    let list: Season[] = [];
     let seasonNum = -1;
     let page;
     try {
@@ -237,7 +247,7 @@ async function getEpisodesFormUrl(url) {
     return list;
 }
 
-export async function downloadPlaylistUrl(url, resolution, options) {
+export async function downloadPlaylistUrl(url: string, resolution: number | string, options) {
 
     const list = await getEpisodesFormUrl(url);
 
@@ -276,11 +286,11 @@ export async function downloadPlaylistUrl(url, resolution, options) {
 
     // select episode(s)
     if (options.episode) {
-        // convert numbers to numbers (there could be non numerical episode-numbers)
-        seasonsToDownload.forEach(s => s.episodes = s.episodes.map((e) => { if (!isNaN(e.number)) e.number = parseInt(e.number); return e }));
+        // if episode number numeric, convert number to string and back to number to normalize representation (e.g. leading zeros)
+        seasonsToDownload.forEach(s => s.episodes = s.episodes.map((e) => { if (!isNaN(Number(e.number))) e.number = Number(e.number) + ""; return e }));
 
-        const getEpisodeFromNumber = (number) => {
-            if (!isNaN(number)) number = parseInt(number);
+        const getEpisodeFromNumber = (number: string) => {
+            if (!isNaN(Number(number))) number = Number(number) + "";
             const results = [];
             for (let seasonIndex = 0; seasonIndex < seasonsToDownload.length; seasonIndex++) {
                 const season = seasonsToDownload[seasonIndex].episodes;
