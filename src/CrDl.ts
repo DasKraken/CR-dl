@@ -82,21 +82,21 @@ function saveCookieJar() {
     fs.writeFileSync("cookies.data", JSON.stringify(jar._jar.serializeSync()));
 }
 
-function cleanUp(options) {
+export function cleanUp(options) {
     const dir = (options && options.tmpDir) || "tmp/";
     try {
         deleteFolderRecursive(dir);
     } catch (e) { };
 }
 
-async function isLoggedIn() {
+export async function isLoggedIn() {
     loadCookieJar();
     let res = await cloudflareBypass.get("http://www.crunchyroll.com/videos/anime");
     saveCookieJar();
     return res.body.indexOf("<a href=\"/logout\"") > -1
 }
 
-async function login(username, password) {
+export async function login(username, password) {
     loadCookieJar();
     if (await isLoggedIn()) {
         console.log("Already logged in!");
@@ -140,16 +140,16 @@ async function login(username, password) {
     }
 
 }
-async function logout() {
+export async function logout() {
     loadCookieJar();
     await cloudflareBypass.get("http://www.crunchyroll.com/logout");
     saveCookieJar();
 }
-async function getLang() {
+export async function getLang() {
     let res = await cloudflareBypass.get("http://www.crunchyroll.com/videos/anime");
     return res.body.match(/<a href="[^"]+"\s*onclick="return Localization\.SetLang\(\s*'([A-Za-z]{4})',\s*'[^']+',\s*'[^']+'\s*\);"\s*data-language="[^"]+"\s*class="selected">[^<]+<\/a>/)[1]
 }
-async function setLang(lang) {
+export async function setLang(lang) {
     loadCookieJar();
     let res = await cloudflareBypass.get("http://www.crunchyroll.com/videos/anime");
     let token = res.body.match(/<a href="[^"]+"\s*onclick="return Localization\.SetLang\(\s*'[A-Za-z]{4}',\s*'([^']+)',\s*'[^']+'\s*\);"\s*data-language="[^"]+"\s*class="selected">[^<]+<\/a>/)[1]
@@ -237,7 +237,7 @@ async function getEpisodesFormUrl(url) {
     return list;
 }
 
-async function downloadPlaylistUrl(url, resolution, options) {
+export async function downloadPlaylistUrl(url, resolution, options) {
 
     const list = await getEpisodesFormUrl(url);
 
@@ -442,11 +442,8 @@ async function downloadSubsOnly(subtitlesToInclude, outputPath) {
     }
 }
 
-async function downloadVideoUrl(url, resolution, options) {
+export async function downloadVideoUrl(url, resolution, options) {
     loadCookieJar();
-
-    // Set cookie to get vilos player
-    jar.setCookie(request.cookie('VILOS_ROLLOUT=9d5ed678fe57bcca610140957afab571_6; Max-Age=31536000; path=/; domain=crunchyroll.com; httponly'), "http://crunchyroll.com/");
 
     let html;
     try {
@@ -566,15 +563,4 @@ async function downloadVideoUrl(url, resolution, options) {
     }
     saveCookieJar();
     cleanUp(options);
-}
-
-module.exports = {
-    downloadVideoUrl,
-    downloadPlaylistUrl,
-    login,
-    logout,
-    cleanUp,
-    isLoggedIn,
-    setLang,
-    getLang
 }
