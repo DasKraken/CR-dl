@@ -2,7 +2,8 @@
 const request = require('request');
 const {
     NodeHttpClient,
-    setCookieJar
+    setCookieJar,
+    setHttpProxy
 } = require("./NodeHttpClient");
 const CloudflareBypass = require("./CloudflareBypass");
 const {
@@ -517,6 +518,7 @@ async function downloadVideoUrl(url, resolution, options) {
         }
 
     }
+    setHttpProxy(options.httpProxyCdn);
     let subsToInclude;
     if (options.hardsub) {
         if (options.subLangs.split(",").length > 1) throw new UserInputException("Cannot embed multiple subtitles with --hardsub");
@@ -595,5 +597,6 @@ module.exports = {
     cleanUp,
     isLoggedIn,
     setLang,
-    getLang
+    getLang,
+    setHttpProxy
 }

@@ -77,11 +77,12 @@ for (let f in fontFiles) {
 }
 
 
-async function downloadFile(uri, dest) {
+async function downloadFile(uri, dest, options) {
     await new Promise((resolve, reject) => {
         request(uri, {
             forever: true,
-            timeout: 20000
+            timeout: 20000,
+            proxy: options.httpProxy
         }).on("error", (e) => {
             reject(new NetworkException(e.message));
         }).on("response", (response) => {
@@ -116,7 +117,7 @@ exports.downloadFontsFromSubtitles = async (_httpClient, subtitles, options) => 
                 fontsInSub[font] = true;
                 if (font in availableFonts) {
                     const filePath = path.join(dir, availableFonts[font].split('/').pop());
-                    await downloadFile(availableFonts[font], filePath);
+                    await downloadFile(availableFonts[font], filePath, options);
                     fontsToInclude.push(filePath);
                 } else {
                     console.log("Unknown font: " + font)

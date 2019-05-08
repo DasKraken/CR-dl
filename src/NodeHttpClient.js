@@ -5,6 +5,11 @@ function setCookieJar(cjar) {
     jar = cjar;
 }
 
+let httpProxy;
+function setHttpProxy(proxy) {
+    httpProxy = proxy;
+}
+
 function processBody(body) {
     if (!body) return undefined;
 
@@ -51,6 +56,7 @@ class NodeHttpClient {
             options["headers"] = options["headers"] || {};
             options.headers["User-Agent"] = options.headers["User-Agent"] || "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:61.0) Gecko/20100101 Firefox/61.0";
             options.headers["Accept-Language"] = options.headers["Accept-Language"] || "*";
+            options.proxy = httpProxy;
             if (body) options.headers["Content-Type"] = "application/x-www-form-urlencoded";
             request(options, (err, response) => {
                 if (err) {
@@ -72,5 +78,6 @@ class NodeHttpClient {
 
 module.exports = {
     NodeHttpClient,
-    setCookieJar
+    setCookieJar,
+    setHttpProxy
 }

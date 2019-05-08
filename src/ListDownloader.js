@@ -83,7 +83,8 @@ class ListDownloader extends EventEmitter {
                     file.downloadedSize = 0;
                     request(file.url, {
                         forever: true,
-                        timeout: 20000
+                        timeout: 20000,
+                        proxy: this.options.httpProxyCdn
                     }).on("error", (e) => {
                         reject(new NetworkException(e.message));
                     }).on("response", (response) => {
