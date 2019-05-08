@@ -1,6 +1,6 @@
 // @ts-check
 const {
-    getMediaByUrl,
+    getMedia,
     setHttpClient
 } = require("crunchyroll-lib/index");
 const {
@@ -10,6 +10,14 @@ const {
 } = require("./Exceptions");
 const SubtitleToAss = require("./SubtitleToAss");
 const langs = require('langs');
+
+async function getMediaByUrl(url, optionsOrVideoQuality, options) {
+    let mediaId = /www\.crunchyroll\.com\/(?:[a-z-]{1,5}\/)?[^/]+\/[^/]+-([0-9]+)$/.exec(url)[1];
+    return await getMedia(mediaId, url, optionsOrVideoQuality, options);
+
+}
+
+
 
 class SubtitleLegacyPlayer {
     constructor(sub) {
