@@ -184,6 +184,12 @@ const run = async () => {
       help: "Download using the method used by the old Flash Player."
     }
   );
+  download.addArgument(
+    ["--attachFonts"], {
+      action: "storeTrue",
+      help: "Attach all fonts that are used in subtitles."
+    }
+  );
   const args = parser.parseArgs();
 
   args.showProgressBar = !args.hideProgressBar;

@@ -25,6 +25,7 @@ let format = require('string-format')
 const mkdirp = require('mkdirp');
 const path = require('path');
 const { pad, deleteFolderRecursive, toFilename, formatScene } = require('./Utils');
+const { downloadFontsFromSubtitles } = require('./FontDownloader');
 
 let jar = request.jar()
 setCookieJar(jar);
@@ -526,7 +527,14 @@ async function downloadVideoUrl(url, resolution, options) {
     } else {
         options.hardsubLang = null;
         subsToInclude = await getSubsToInclude(subtitles, options);
+
     }
+    let fontsToInclude = [];
+    if (options.attachFonts) {
+        fontsToInclude = await downloadFontsFromSubtitles(httpClientInstance, subsToInclude, options);
+    }
+
+    //console.log(fontsToInclude);
 
     let selectedStream
     if (!options.subsOnly) {
@@ -573,7 +581,7 @@ async function downloadVideoUrl(url, resolution, options) {
         await downloadSubsOnly(subsToInclude, outputPath);
     } else {
         const m3u8File = await downloadVideoFromM3U(selectedStream.getUrl(), "VodVid", options)
-        await processVideo(m3u8File, metadata, subsToInclude, outputPath, options)
+        await processVideo(m3u8File, metadata, subsToInclude, fontsToInclude, outputPath, options)
     }
     saveCookieJar();
     cleanUp(options);
