@@ -466,7 +466,7 @@ async function downloadVideoUrl(url, resolution, options) {
     }
     saveCookieJar();
     let media;
-    if (html.indexOf("vilos.config.media") == -1 || options.legacyPlayer) {
+    if (html.indexOf("vilos.config.media") == -1) {
         // Flash Player
         console.log("(Flash Player)")
         media = new MediaLegacyPlayer(html, url);
@@ -476,7 +476,13 @@ async function downloadVideoUrl(url, resolution, options) {
         media = new MediaVilosPlayer(html, url);
     }
 
-    const subtitles = await media.getSubtitles();
+    let subtitles;
+    if (options.legacyPlayer) {
+        subtitles = await (new MediaLegacyPlayer(html, url)).getSubtitles();
+    } else {
+        subtitles = await media.getSubtitles();
+    }
+
     if (options.listSubs) {
         // List subs. Do not download.
         const subsTable = [];
