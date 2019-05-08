@@ -178,6 +178,12 @@ const run = async () => {
       help: "Download only subtitles. No Video."
     }
   );
+  download.addArgument(
+    ["--legacyPlayer"], {
+      action: "storeTrue",
+      help: "Download using the method used by the old Flash Player."
+    }
+  );
   const args = parser.parseArgs();
 
   args.showProgressBar = !args.hideProgressBar;

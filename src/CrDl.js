@@ -466,7 +466,7 @@ async function downloadVideoUrl(url, resolution, options) {
     }
     saveCookieJar();
     let media;
-    if (html.indexOf("vilos.config.media") == -1) {
+    if (html.indexOf("vilos.config.media") == -1 || options.legacyPlayer) {
         // Flash Player
         console.log("(Flash Player)")
         media = new MediaLegacyPlayer(html, url);
