@@ -586,6 +586,9 @@ async function downloadVideoUrl(url, resolution, options) {
         await processVideo(m3u8File, metadata, subsToInclude, fontsToInclude, outputPath, options)
     }
     saveCookieJar();
+
+    // Reset for next videos
+    setHttpProxy(options.httpProxy);
     cleanUp(options);
 }
 
