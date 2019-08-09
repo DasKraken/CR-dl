@@ -96,7 +96,7 @@ class MediaVilosPlayer {
     }
     async _getStreamForHardsubLang(hardSubLang) {
         for (const stream of this._config.streams) {
-            if (stream.hardsub_lang == hardSubLang) {
+            if (stream.hardsub_lang == hardSubLang && stream.format == "adaptive_hls") {
                 return stream;
             }
         }
