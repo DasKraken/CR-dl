@@ -32,7 +32,7 @@ const run = async () => {
 
   const ArgumentParser = require("argparse").ArgumentParser;
   const parser = new ArgumentParser({
-    version: "3.3.0",
+    version: "3.3.1",
     addHelp: true,
     description: "Crunchyroll downloader",
   });
