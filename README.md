@@ -69,6 +69,9 @@ Specify subtitle languages as a comma separated list to include in video. (e.g. 
 ```-l LANG, --subDefault LANG```
 Specify subtitle language to be set as default. (e.g. enUS). (Default: if --subLangs defined: first entry, otherwise: crunchyroll default)
 
+```--attachFonts```
+Automatically download and attach all fonts that are used in subtitles.
+
 ```--listSubs```
 Don't download. Show list of available subtitle languages.
 
@@ -83,6 +86,15 @@ Max number of download attempts before aborting. (Default: 5)
 
 ```--hideProgressBar```
 Hide progress bar.
+
+```--legacyPlayer```
+Download subtitles using the method used by the old Flash Player (For some reason they use different fonts on older videos).
+
+```--httpProxy PROXY```
+HTTP proxy to access Crunchyroll. This is enough to bypass geo-blocking.
+
+```--httpProxyCdn PROXY```
+HTTP proxy used to download video files.
 
 ```-o OUTPUT, --output OUTPUT```
 Output filename template, see the "OUTPUT TEMPLATE" for all the info

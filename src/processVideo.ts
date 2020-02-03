@@ -2,7 +2,7 @@ import { spawn } from 'child_process';
 import { RuntimeException} from "./Exceptions";
 import * as _cliProgress from "cli-progress";
 
-export default function processVideo(input, metadata, subtitles, output, options) {
+export default function processVideo(input, metadata, subtitles, fonts, output, options) {
     return new Promise((resolve, reject) => {
 
         let command = ["-allowed_extensions", "ALL", "-y", "-i", input.replace(/\\/g, "/")];
@@ -23,6 +23,23 @@ export default function processVideo(input, metadata, subtitles, output, options
             command.push("-disposition:s:" + s, subtitle.default ? "default" : "0")
             i++;
             s++;
+        }
+
+        let t = 0;
+        for (const font of fonts) {
+            const fileEnding = font.split(".").pop().trim().toLowerCase();
+            let mimeType;
+
+            // https://github.com/FFmpeg/FFmpeg/blob/master/libavformat/matroska.c#L131
+            if (fileEnding == "ttf") {
+                mimeType = "application/x-truetype-font";
+            } else if (fileEnding == "otf") {
+                mimeType = "application/vnd.ms-opentype";
+            }
+
+            command.push("-attach", font.replace(/\\/g, "/"));
+            command.push("-metadata:s:t:" + t, "mimetype=" + mimeType);
+            t++;
         }
 
         command.push("-c", "copy", output)

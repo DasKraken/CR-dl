@@ -1,7 +1,8 @@
 import * as request from 'request';
 import {
     NodeHttpClient,
-    setCookieJar
+    setCookieJar,
+    setHttpProxy
 } from "./NodeHttpClient";
 import CloudflareBypass from "./CloudflareBypass";
 import {
@@ -19,7 +20,8 @@ import * as fs from "fs";
 import * as format_ from 'string-format';
 import * as mkdirp from 'mkdirp';
 import * as path from 'path';
-import { pad, deleteFolderRecursive, toFilename, formatScene } from './Utils';
+import { pad, deleteFolderRecursive, toFilename, formatScene, makeid } from './Utils';
+const { downloadFontsFromSubtitles } = require('./FontDownloader');
 
 let jar = request.jar()
 setCookieJar(jar);
@@ -455,122 +457,151 @@ async function downloadSubsOnly(subtitlesToInclude, outputPath) {
 export async function downloadVideoUrl(url, resolution, options) {
     loadCookieJar();
 
-    let html;
+    // Set cookie to get vilos player
+    jar.setCookie(request.cookie('VILOS_ROLLOUT=9d5ed678fe57bcca610140957afab571_6; Max-Age=31536000; path=/; domain=crunchyroll.com; httponly'), "http://crunchyroll.com/");
+
+    options.tmpDir = "tmp_" + makeid(6) + "/";
     try {
-        html = (await cloudflareBypass.get(url)).body;
-    } catch (e) {
-        if (e.status) {
-            throw new NetworkException("Status " + e.status + ": " + e.statusText);
-        } else {
-            throw e;
-        }
-    }
-    saveCookieJar();
-    let media;
-    if (html.indexOf("vilos.config.media") == -1) {
-        // Flash Player
-        //console.log("(Flash Player)")
-        throw new Error("Player not supported")
-        //media = new MediaLegacyPlayer(html, url);
-    } else {
-        // Vilos Player
-        console.log("(HTML5 Player)")
-        media = new MediaVilosPlayer(html, url);
-    }
-
-    const subtitles = await media.getSubtitles();
-    if (options.listSubs) {
-        // List subs. Do not download.
-        const subsTable = [];
-        for (const sub of subtitles) {
-            subsTable.push({ title: await sub.getTitle(), langCode: await sub.getLanguage(), isDefault: await sub.isDefault() });
-        }
-        console.table(subsTable);
-        return
-    }
-
-
-    if (!options.subDefault) {
-        if (options.subLangs) {
-            const langs = options.subLangs.split(",")
-            options.subDefault = langs[0];
-        } else if (subtitles.length == 0) {
-            options.subDefault = "none";
-        } else {
-            options.subDefault = await media.getDefaultLanguage();
-        }
-    }
-    if (!options.subLangs) {
-        if (options.hardsub) {
-            options.subLangs = options.subDefault;
-        } else {
-            let subLangs = [];
-            for (const sub of subtitles) {
-                subLangs.push(await sub.getLanguage());
+        let html;
+        try {
+            html = (await cloudflareBypass.get(url)).body;
+        } catch (e) {
+            if (e.status) {
+                throw new NetworkException("Status " + e.status + ": " + e.statusText);
+            } else {
+                throw e;
             }
-            options.subLangs = subLangs.join(",");
         }
-
-    }
-    let subsToInclude;
-    if (options.hardsub) {
-        if (options.subLangs.split(",").length > 1) throw new UserInputException("Cannot embed multiple subtitles with --hardsub");
-        options.hardsubLang = options.subDefault;
-        subsToInclude = [];
-
-        console.log(`Selected "${options.hardsubLang}" as hardsub language.`)
-    } else {
-        options.hardsubLang = null;
-        subsToInclude = await getSubsToInclude(subtitles, options);
-    }
-
-    let selectedStream
-    if (!options.subsOnly) {
-        resolution = await getMaxWantedResolution(await media.getAvailableResolutions(options.hardsubLang), resolution);
-
-        // We may get multiple streams on different servers. Just take first.
-        selectedStream = (await media.getStreams(resolution, options.hardsubLang))[0];
-    }
-
-
-    const metadata = {
-        episodeTitle: await media.getEpisodeTitle(),
-        seriesTitle: await media.getSeriesTitle(),
-        episodeNumber: await media.getEpisodeNumber(),
-        seasonTitle: await media.getSeasonTitle(),
-        resolution: options.subsOnly ? "subtitles" : selectedStream.getHeight() + "p",
-    }
-
-    if (!isNaN(metadata.episodeNumber)) {
-        metadata.episodeNumber = pad(metadata.episodeNumber, 2)
-    }
-
-    const formatData = {};
-    for (const prop in metadata) {
-        formatData[prop] = toFilename(metadata[prop]);
-    }
-
-    if (!options.output) {
-        if (options.subsOnly) {
-            options.output = "{seasonTitle} [subtitles]/{seasonTitle} - {episodeNumber} - {episodeTitle}.ass";
+        saveCookieJar();
+        let media;
+        if (html.indexOf("vilos.config.media") == -1) {
+            // Flash Player
+            console.log("(Flash Player)")
+            //media = new MediaLegacyPlayer(html, url);
+            throw new Error("Flash Player not supported anymore");
         } else {
-            options.output = "{seasonTitle} [{resolution}]/{seasonTitle} - {episodeNumber} - {episodeTitle} [{resolution}].mkv";
+            // Vilos Player
+            console.log("(HTML5 Player)")
+            media = new MediaVilosPlayer(html, url);
         }
-    }
-    const outputPath = format(options.output, formatData)
 
-    console.log(`Downloading to "${outputPath}"...`);
+        let subtitles;
+        if (options.legacyPlayer) {
+            //subtitles = await (new MediaLegacyPlayer(html, url)).getSubtitles();
+            throw new Error("Flash Player not supported anymore");
+        } else {
+            subtitles = await media.getSubtitles();
+        }
 
-    const outputDirectory = outputPath.substring(0, outputPath.lastIndexOf("/"));
-    if (outputDirectory.length > 0) {
-        mkdirp.sync(outputDirectory);
+        if (options.listSubs) {
+            // List subs. Do not download.
+            const subsTable = [];
+            for (const sub of subtitles) {
+                subsTable.push({ title: await sub.getTitle(), langCode: await sub.getLanguage(), isDefault: await sub.isDefault() });
+            }
+            console.table(subsTable);
+            return
+        }
+
+
+        if (!options.subDefault) {
+            if (options.subLangs) {
+                const langs = options.subLangs.split(",")
+                options.subDefault = langs[0];
+            } else if (subtitles.length == 0) {
+                options.subDefault = "none";
+            } else {
+                options.subDefault = await media.getDefaultLanguage();
+            }
+        }
+        if (!options.subLangs) {
+            if (options.hardsub) {
+                options.subLangs = options.subDefault;
+            } else {
+                let subLangs = [];
+                for (const sub of subtitles) {
+                    subLangs.push(await sub.getLanguage());
+                }
+                options.subLangs = subLangs.join(",");
+            }
+
+        }
+        setHttpProxy(options.httpProxyCdn);
+        let subsToInclude;
+        if (options.hardsub) {
+            if (options.subLangs.split(",").length > 1) throw new UserInputException("Cannot embed multiple subtitles with --hardsub");
+            options.hardsubLang = options.subDefault;
+            subsToInclude = [];
+
+            console.log(`Selected "${options.hardsubLang}" as hardsub language.`)
+        } else {
+            options.hardsubLang = null;
+            subsToInclude = await getSubsToInclude(subtitles, options);
+
+        }
+        let fontsToInclude = [];
+        if (options.attachFonts) {
+            fontsToInclude = await downloadFontsFromSubtitles(httpClientInstance, subsToInclude, options);
+        }
+
+        //console.log(fontsToInclude);
+
+        let selectedStream
+        if (!options.subsOnly) {
+            resolution = await getMaxWantedResolution(await media.getAvailableResolutions(options.hardsubLang), resolution);
+
+            // We may get multiple streams on different servers. Just take first.
+            selectedStream = (await media.getStreams(resolution, options.hardsubLang))[0];
+        }
+
+
+        const metadata = {
+            episodeTitle: await media.getEpisodeTitle(),
+            seriesTitle: await media.getSeriesTitle(),
+            episodeNumber: await media.getEpisodeNumber(),
+            seasonTitle: await media.getSeasonTitle(),
+            resolution: options.subsOnly ? "subtitles" : selectedStream.getHeight() + "p",
+        }
+
+        if (!isNaN(metadata.episodeNumber)) {
+            metadata.episodeNumber = pad(metadata.episodeNumber, 2)
+        }
+
+        const formatData = {};
+        for (const prop in metadata) {
+            formatData[prop] = toFilename(metadata[prop]);
+        }
+
+        if (!options.output) {
+            if (options.subsOnly) {
+                options.output = "{seasonTitle} [subtitles]/{seasonTitle} - {episodeNumber} - {episodeTitle}.ass";
+            } else {
+                options.output = "{seasonTitle} [{resolution}]/{seasonTitle} - {episodeNumber} - {episodeTitle} [{resolution}].mkv";
+            }
+        }
+        const outputPath = format(options.output, formatData)
+
+        console.log(`Downloading to "${outputPath}"...`);
+
+        const outputDirectory = outputPath.substring(0, outputPath.lastIndexOf("/"));
+        if (outputDirectory.length > 0) {
+            mkdirp.sync(outputDirectory);
+        }
+        if (options.subsOnly) {
+            await downloadSubsOnly(subsToInclude, outputPath);
+        } else {
+            const m3u8File = await downloadVideoFromM3U(selectedStream.getUrl(), "VodVid", options)
+            await processVideo(m3u8File, metadata, subsToInclude, fontsToInclude, outputPath, options)
+        }
+        saveCookieJar();
+    } catch (e) {
+        throw e;
+    } finally {
+        // Reset for next videos
+        setHttpProxy(options.httpProxy);
+        cleanUp(options);
+        options.tmpDir = "tmp/";
+
     }
-    if (options.subsOnly) {
-        await downloadSubsOnly(subsToInclude, outputPath);
-    } else {
-        const m3u8File = await downloadVideoFromM3U(selectedStream.getUrl(), "VodVid", options)
-        await processVideo(m3u8File, metadata, subsToInclude, outputPath, options)
-    }
-    saveCookieJar();
-    cleanUp(options);
 }
+export {setHttpProxy};

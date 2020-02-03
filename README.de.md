@@ -72,6 +72,9 @@ Eine kommagetrennte Liste (ohne Leerzeichen) an Sprachen die in das Video eingeb
 ```-l LANG, --subDefault LANG```
 Sprache, dessen Untertitel als Standard ausgewählt werden sollen. (z.B: enUS). Standard ist, falls angegeben, der erste Eintrag von --subLangs, ansonsten CR-Standard.
 
+```--attachFonts```
+Lädt automatisch die von den Untertiteln benötigten Schriftarten herunter und hängt sie an die Videodatei an.
+
 ```--listSubs```
 Video nicht herunterladen. Zeigt nur Liste an verfügbaren Sprachen an.
 
@@ -86,6 +89,16 @@ Anzahl Wiederholungsversuche bei Netzwerkproblemen. (Standard: 5)
 
 ```--hideProgressBar```
 Keinen Fortschrittsbalken anzeigen.
+
+```--legacyPlayer```
+Lade Untertitel mit der alten Methode die vom Flash Player verwendet wurde. (Aus irgendeinem Grund nutzen sie unterschiedliche Schriftarten bei älteren Videos).
+
+```--httpProxy PROXY```
+HTTP proxy für Zugriff auf Crunchyroll. Dies ist ausreichend um Länderrestriktionen zu umgehen.
+
+```--httpProxyCdn PROXY```
+HTTP proxy für Download der Videodateien.
+
 
 ```-o OUTPUT, --output OUTPUT```
 Vorlage zur Ordner- und Dateibenennung. Siehe unten für mehr Informationen

@@ -32,7 +32,7 @@ const run = async () => {
 
   const ArgumentParser = require("argparse").ArgumentParser;
   const parser = new ArgumentParser({
-    version: "3.1.0",
+    version: "3.3.1",
     addHelp: true,
     description: "Crunchyroll downloader",
   });
@@ -60,6 +60,13 @@ const run = async () => {
       help: "Password on CR",
     }
   );
+  loginC.addArgument(
+    ["--httpProxy"], {
+      action: "store",
+      type: "string",
+      help: "HTTP proxy used to access Crunchyroll."
+    }
+  );
   const lang = subparsers.addParser("language", {
     aliases: ["lang"],
     addHelp: true,
@@ -72,10 +79,24 @@ const run = async () => {
       help: "Language to use",
     }
   );
+  lang.addArgument(
+    ["--httpProxy"], {
+      action: "store",
+      type: "string",
+      help: "HTTP proxy used to access Crunchyroll."
+    }
+  );
   const logout = subparsers.addParser("logout", {
     addHelp: true,
     description: "Logs out of CR."
   });
+  logout.addArgument(
+    ["--httpProxy"], {
+      action: "store",
+      type: "string",
+      help: "HTTP proxy used to access Crunchyroll."
+    }
+  );
   const download = subparsers.addParser("download", {
     aliases: ["dl"],
     addHelp: true,
@@ -178,10 +199,40 @@ const run = async () => {
       help: "Download only subtitles. No Video."
     }
   );
+  download.addArgument(
+    ["--legacyPlayer"], {
+      action: "storeTrue",
+      help: "Download using the method used by the old Flash Player."
+    }
+  );
+  download.addArgument(
+    ["--attachFonts"], {
+      action: "storeTrue",
+      help: "Attach all fonts that are used in subtitles."
+    }
+  );
+  download.addArgument(
+    ["--httpProxy"], {
+      action: "store",
+      type: "string",
+      help: "HTTP proxy used to access Crunchyroll."
+    }
+  );
+  download.addArgument(
+    ["--httpProxyCdn"], {
+      action: "store",
+      type: "string",
+      help: "HTTP proxy used to download video files."
+    }
+  );
+
+
   const args = parser.parseArgs();
 
   args.showProgressBar = !args.hideProgressBar;
   args.tmpDir = "tmp/";
+
+  CrDl.setHttpProxy(args.httpProxy);
 
   if (args.subcommand_name == "login") {
     await CrDl.login(args.username, args.password);
