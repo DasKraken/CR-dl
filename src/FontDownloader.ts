@@ -1,7 +1,8 @@
-const mkdirp = require('mkdirp');
-const path = require('path');
-const fs = require('fs');
-const request = require("request");
+import * as mkdirp from 'mkdirp';
+import * as path from 'path';
+import * as fs from 'fs';
+import * as request from "request";
+import {NetworkException} from "./Exceptions";
 
 const fontsRootUrl = "https://static.crunchyroll.com/vilos/assets/fonts/";
 
@@ -104,7 +105,7 @@ exports.downloadFontsFromSubtitles = async (_httpClient, subtitles, options) => 
 
     for (const subtitle of subtitles) {
 
-        const subContent = fs.readFileSync(subtitle.path);
+        const subContent = fs.readFileSync(subtitle.path).toString();
 
         // https://github.com/Dador/JavascriptSubtitlesOctopus/blob/master/src/pre-worker.js#L15
         const regex1 = /\nStyle: [^,]*?,([^,]*?),/ig;
