@@ -73,7 +73,7 @@ async function downloadString(uri, options) {
                     timeout: 20000
                 }, (error, response, body) => {
                     if (error) {
-                        reject(new NetworkException(e.message));
+                        reject(new NetworkException("HTTP connection reset"));
                         return;
                     }
                     if (response.statusCode != 200) {
