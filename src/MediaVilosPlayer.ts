@@ -79,7 +79,8 @@ interface VilosMediaConfigSubtitle {
     format: string; // currently always "ass"
 }
 interface VilosMediaConfigStream {
-    format: string; // always "hls" for now
+    format: string; //  "adaptive_dash", "adaptive_hls", "drm_adaptive_dash", "drm_multitrack_adaptive_hls_v2", 
+    // "multitrack_adaptive_hls_v2", "vo_adaptive_dash", "vo_adaptive_hls", "vo_drm_adaptive_dash", "vo_drm_adaptive_hls"
     audio_lang: string;
     hardsub_lang: string;
     url: string;
@@ -119,8 +120,16 @@ export class MediaVilosPlayer {
     constructor(html: string, url: string) {
         this._html = html;
         this._url = url;
-        this._language = JSON.parse(this._html.match(/vilos\.config\.player\.language = ([^;]+);/)[1]);
-        this._config = JSON.parse(this._html.match(/vilos\.config\.media = (.+);/)[1]);
+
+        const matchConfig = this._html.match(/vilos\.config\.media = (.+);/);
+        if (!matchConfig) throw new Error("Couldn't find video config on webpage.");
+        this._config = JSON.parse(matchConfig[1]);
+
+        const matchLanguage = this._html.match(/vilos\.config\.player\.language = ([^;]+);/);
+        if (!matchLanguage) throw new Error("Couldn't find default language");
+        this._language = JSON.parse(matchLanguage[1]);
+
+
     };
     async getSubtitles(): Promise<SubtitleVilosPlayer[]> {
         const subtitles: SubtitleVilosPlayer[] = [];
@@ -135,9 +144,9 @@ export class MediaVilosPlayer {
         return this._language;
     }
 
-    async _loadStreamData(stream: VilosMediaConfigStream) {
-        if (stream.data) return;
-        stream.data = (await _httpClient.get(stream.url)).body;
+    async _loadStreamData(stream: VilosMediaConfigStream): Promise<string> {
+        if (stream.data) return stream.data;
+        return (await _httpClient.get(stream.url)).body;
     }
     async _getStreamForHardsubLang(hardSubLang: string) {
         for (const stream of this._config.streams) {
@@ -154,9 +163,11 @@ export class MediaVilosPlayer {
         if (!selectedStream) {
             throw new UserInputException("No stream found for hardsub language: " + hardSubLang);
         }
-        await this._loadStreamData(selectedStream);
+        if (!selectedStream.data) {
+            selectedStream.data = await this._loadStreamData(selectedStream);
+        }
 
-        const availableResolutions = [];
+        const availableResolutions: number[] = [];
         const regexResolutions = /RESOLUTION=[0-9]+x([0-9]+)/gm;
         let m;
         while ((m = regexResolutions.exec(selectedStream.data)) !== null) {
@@ -169,9 +180,14 @@ export class MediaVilosPlayer {
     }
     async getStreams(resolution, hardSubLang): Promise<StreamVilosPlayer[]> {
         const selectedStream = await this._getStreamForHardsubLang(hardSubLang);
-        await this._loadStreamData(selectedStream);
-        // selectedStream is a group of Streams in different resolutions. We need to filter out one resolution.
+        if (!selectedStream) {
+            throw new UserInputException("No stream found for hardsub language: " + hardSubLang);
+        }
+        if (!selectedStream.data) {
+            selectedStream.data = await this._loadStreamData(selectedStream);
+        }
 
+        // selectedStream is a group of Streams in different resolutions. We need to filter out one resolution.
         const m3uData: any = await parseM3U(selectedStream.data);
         const streamList: StreamVilosPlayer[] = [];
         for (const streamItem of m3uData.items.StreamItem) {

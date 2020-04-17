@@ -454,7 +454,22 @@ async function downloadSubsOnly(subtitlesToInclude, outputPath) {
     }
 }
 
-export async function downloadVideoUrl(url, resolution, options) {
+interface CrDlOptions {
+    tmpDir: string;
+    legacyPlayer: boolean;
+    listSubs: boolean;
+    subDefault?: string; 
+    subLangs?: string; 
+    hardsub: boolean;
+    httpProxyCdn?: string;
+    hardsubLang?: string;
+    subsOnly: boolean;
+    attachFonts: boolean;
+    output?: string;
+    httpProxy?: string; 
+}
+
+export async function downloadVideoUrl(url, resolution, options: CrDlOptions) {
     loadCookieJar();
 
     // Set cookie to get vilos player
@@ -604,4 +619,4 @@ export async function downloadVideoUrl(url, resolution, options) {
 
     }
 }
-export {setHttpProxy};
+export { setHttpProxy };

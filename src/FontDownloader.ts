@@ -107,7 +107,7 @@ exports.downloadFontsFromSubtitles = async (_httpClient, subtitles, options) => 
 
         const subContent = fs.readFileSync(subtitle.path).toString();
 
-        // https://github.com/Dador/JavascriptSubtitlesOctopus/blob/master/src/pre-worker.js#L15
+        // https://github.com/Dador/JavascriptSubtitlesOctopus/blob/a824d5571961daa839722bb4cfc62e06fd6a2e11/src/pre-worker.js#L16
         const regex1 = /\nStyle: [^,]*?,([^,]*?),/ig;
         const regex2 = /\\fn([^\\}]*?)[\\}]/g;
 
