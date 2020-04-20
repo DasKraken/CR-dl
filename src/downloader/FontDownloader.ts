@@ -2,7 +2,7 @@ import * as mkdirp from 'mkdirp';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as request from "request";
-import {NetworkException} from "./Exceptions";
+import {NetworkError} from "../Errors";
 
 const fontsRootUrl = "https://static.crunchyroll.com/vilos/assets/fonts/";
 
@@ -85,10 +85,10 @@ async function downloadFile(uri, dest, options) {
             timeout: 20000,
             proxy: options.httpProxy
         }).on("error", (e) => {
-            reject(new NetworkException(e.message));
+            reject(new NetworkError(e.message));
         }).on("response", (response) => {
             if (response.statusCode != 200) {
-                reject(new NetworkException("HTTP status code: " + (response.statusCode)));
+                reject(new NetworkError("HTTP status code: " + (response.statusCode)));
             }
         }).pipe(fs.createWriteStream(dest)).on("finish", (resolve));
     });
@@ -100,7 +100,7 @@ exports.downloadFontsFromSubtitles = async (_httpClient, subtitles, options) => 
     const dir = path.join(options.tmpDir, "Fonts")
     mkdirp.sync(dir);
 
-    const fontsToInclude = [];
+    const fontsToInclude: string[] = [];
     const fontsInSub = {};
 
     for (const subtitle of subtitles) {

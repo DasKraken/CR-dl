@@ -1,16 +1,17 @@
 import {
-    UserInputException,
-    RuntimeException,
-    NetworkException
-} from "./Exceptions";
+    UserInputError,
+    RuntimeError,
+    NetworkError
+} from "../Errors";
 import * as request from "request";
 import * as async from "async";
 import * as fs from "fs";
 import { EventEmitter } from "events";
+import { DownloadItem } from "../types/download";
 
 
 export default class ListDownloader extends EventEmitter {
-    list: any[];
+    list: (DownloadItem & { downloadedSize?: number, totalSize?: number })[];
     options: any;
     abort: boolean;
 
@@ -24,7 +25,7 @@ export default class ListDownloader extends EventEmitter {
     lastSpeedCheck: number;
     downloadedSinceCheck: number;
 
-    constructor(list, options) {
+    constructor(list: DownloadItem[], options) {
         super();
         this.list = list;
         this.options = options;
@@ -100,13 +101,13 @@ export default class ListDownloader extends EventEmitter {
                         timeout: 20000,
                         proxy: this.options.httpProxyCdn
                     }).on("error", (e) => {
-                        reject(new NetworkException(e.message));
+                        reject(new NetworkError(e.message));
                     }).on("response", (response) => {
                         if (response.statusCode != 200) {
-                            reject(new NetworkException("HTTP status code: " + (response.statusCode)));
+                            reject(new NetworkError("HTTP status code: " + (response.statusCode)));
                             return;
                         }
-                        file.totalSize = Number.parseInt(response.headers['content-length']);
+                        file.totalSize = Number.parseInt(response.headers['content-length'] || "1");
                         this.estimateSize();
                         this.emitUpdate();
                         response.on("data", (chunk) => {
@@ -115,7 +116,7 @@ export default class ListDownloader extends EventEmitter {
                             this.updateSpeed(chunk.length)
                             this.emitUpdate();
                         });
-                        response.pipe(fs.createWriteStream(file.dest)).on("finish", (resolve));
+                        response.pipe(fs.createWriteStream(file.destination)).on("finish", (resolve));
                     })
                 });
                 this.filesInProgress--;
@@ -124,14 +125,14 @@ export default class ListDownloader extends EventEmitter {
                 file.downloadedSize = 0;
                 this.recalculateDownloaded();
                 this.emitUpdate();
-                if (!(e instanceof NetworkException) || attempt >= this.options.maxAttempts - 1 || this.abort) {
+                if (!(e instanceof NetworkError) || attempt >= this.options.maxAttempts - 1 || this.abort) {
                     this.filesInProgress--;
                     throw e;
                 }
                 console.log("Network error: " + e.message + ". Retrying...");
             }
         }
-        throw new RuntimeException("Too many attempts. (This code should't be reachable)");
+        throw new RuntimeError("Too many attempts. (This code should't be reachable)");
     }
     startDownload() {
         this.lastSpeedCheck = Date.now();

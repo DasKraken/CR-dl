@@ -1,17 +1,14 @@
-import { Readable } from "stream";
-import cloudscraper from "./requester/cloudscraper";
+
+import cloudscraper from "../requester/cloudscraper";
 import * as request from "request";
-import got from "./requester/got";
-import { NetworkException, RuntimeException, UserInputException } from "./Exceptions";
+import got from "../requester/got";
+import { NetworkError, RuntimeError, UserInputError } from "../Errors";
+import { Requester, RequesterCdn } from "../types/Requester";
+import { Language } from "../types/language";
+import { VilosVideoInfo } from "./MediaVilosPlayer";
+import { VideoInfo } from "../interfaces/video";
 
-export interface Requester {
-    get: (url: string) => Promise<{ body: Buffer, url: string }>;
-    post: (url: string, formdata?: Record<string, string>) => Promise<{}>
-}
 
-export interface RequesterCdn {
-    stream: (url: string) => Readable
-}
 
 export interface Options {
     requester?: Requester;
@@ -26,6 +23,8 @@ export interface Episode {
 export interface Season {
     name: string;
     episodes: Episode[];
+    isRegionBlocked: boolean;
+    isLanguageUnavailable: boolean;
 }
 
 
@@ -52,10 +51,6 @@ export class CrDl {
     }
 
     async login(username: string, password: string): Promise<void> {
-        if (await this.isLoggedIn()) {
-            console.log("Already logged in!");
-            return;
-        }
         let loginPage: { body: Buffer, url: string };
         try {
             loginPage = await this._requester.get("https://www.crunchyroll.com/login");
@@ -64,7 +59,7 @@ export class CrDl {
         }
         const loginTokenMatch = /name="login_form\[_token\]" value="([^"]+)" \/>/.exec(loginPage.body.toString())
         if (!loginTokenMatch) {
-            throw new RuntimeException("Error logging in: No login token found.");
+            throw new RuntimeError("Error logging in: No login token found.");
         }
         const token = loginTokenMatch[1];
         let res;
@@ -82,31 +77,36 @@ export class CrDl {
         if (await this.isLoggedIn()) {
             return;
         } else {
-            throw new UserInputException("Couldn't log in. Wrong credentials?");
+            throw new UserInputError("Couldn't log in. Wrong credentials?");
         }
 
     }
     async logout(): Promise<void> {
         await this._requester.get("http://www.crunchyroll.com/logout");
+        if (await this.isLoggedIn()) {
+            throw new RuntimeError("Couldn't log out.");
+        } else {
+            return;
+        }
     }
 
-    async getLang(): Promise<string> {
+    async getLang(): Promise<Language> {
         let res = await this._requester.get("http://www.crunchyroll.com/videos/anime");
         let m = res.body.toString().match(/<a href="[^"]+"\s*onclick="return Localization\.SetLang\(\s*'([A-Za-z]{4})',\s*'[^']+',\s*'[^']+'\s*\);"\s*data-language="[^"]+"\s*class="selected">[^<]+<\/a>/);
         if (m) {
-            return m[1];
+            return m[1] as Language;
         } else {
-            throw new RuntimeException("Couldn't find Language");
+            throw new RuntimeError("Couldn't find Language");
         }
     }
-    async setLang(lang: string): Promise<void> {
+    async setLang(lang: Language): Promise<void> {
         let res = await this._requester.get("http://www.crunchyroll.com/videos/anime");
         let tokenMatch = res.body.toString().match(/<a href="[^"]+"\s*onclick="return Localization\.SetLang\(\s*'[A-Za-z]{4}',\s*'([^']+)',\s*'[^']+'\s*\);"\s*data-language="[^"]+"\s*class="selected">[^<]+<\/a>/);
         let token;
         if (tokenMatch) {
             token = tokenMatch[1];
         } else {
-            throw new RuntimeException("Couldn't find token");
+            throw new RuntimeError("Couldn't find token");
         }
 
 
@@ -121,36 +121,37 @@ export class CrDl {
             //console.log("Language changed to " + lang);
             return;
         } else {
-            throw new RuntimeException("Couldn't change language. Currently selected: " + newLang)
+            throw new RuntimeError("Couldn't change language. Currently selected: " + newLang)
         }
     }
 
     async getEpisodesFormUrl(url: string): Promise<Season[]> {
-        let list: Season[] = [];
+        const list: Season[] = [];
         let seasonNum = -1;
-        let page;
-        try {
-            page = (await this._requester.get(url)).body;
-        } catch (e) {
-            if (e.status) {
-                throw new NetworkException("Status " + e.status + ": " + e.statusText);
-            } else {
-                throw e;
-            }
-        }
+        const page: string = (await this._requester.get(url)).body.toString();
+
+        const regionBlockedSeasons: string[] = Array.from(page.matchAll(/<p class="availability-notes-low">[^<]+: ([^<]+))<\/p>/)).map((v: RegExpMatchArray) => v[1]);
+        const languageBlockedSeasons: string[] = Array.from(page.matchAll(/<p class="availability-notes-low">([^<]+) (?:ist in|no está|is not|n'est pas|non è|недоступен)[^<]+<\/p>/)).map((v: RegExpMatchArray) => v[1]);
+
+
         const regex = /(?:<a href="([^"]+)" title="([^"]+)"\s+class="portrait-element block-link titlefix episode">[^$]*<span class="series-title block ellipsis" dir="auto">\s*\S+ (\S+))|(?:<a href="#"\s+class="season-dropdown content-menu block text-link strong (?:open)? small-margin-bottom"\s+title="([^"]+)">[^<]+<\/a>)/gm;
         let m;
         list[0] = {
             name: "",
-            episodes: []
+            episodes: [],
+            isLanguageUnavailable: false,
+            isRegionBlocked: false
         }
         while ((m = regex.exec(page)) !== null) {
             if (m[4]) {
                 if (seasonNum != -1) list[seasonNum].episodes = list[seasonNum].episodes.reverse();
                 seasonNum++;
+
                 list[seasonNum] = {
                     name: m[4],
-                    episodes: []
+                    episodes: [],
+                    isLanguageUnavailable: languageBlockedSeasons.includes(m[4]),
+                    isRegionBlocked: regionBlockedSeasons.includes(m[4])
                 };
             } else {
                 if (seasonNum == -1) seasonNum = 0;
@@ -162,8 +163,13 @@ export class CrDl {
             }
         }
         if (seasonNum != -1) list[seasonNum].episodes = list[seasonNum].episodes.reverse();
-        list = list.reverse();
+        list.reverse();
 
         return list;
+    }
+
+    async loadEpisode(url: string): Promise<VideoInfo> {
+        let html = (await this._requester.get(url)).body.toString();
+        return new VilosVideoInfo(html, url, this._requesterCdn);
     }
 }

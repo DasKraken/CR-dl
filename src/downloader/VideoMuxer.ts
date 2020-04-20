@@ -1,10 +1,10 @@
 import {
-    UserInputException,
-    RuntimeException,
-    NetworkException
-} from "./Exceptions";
+    UserInputError,
+    RuntimeError,
+    NetworkError
+} from "../Errors";
 import { EventEmitter } from "events";
-import { LocalSubtitle } from "./types/Subtitle";
+import { LocalSubtitle } from "../types/Subtitle";
 import { spawn } from 'child_process';
 
 
@@ -60,7 +60,7 @@ export default class VideoMuxer extends EventEmitter {
                     // Video duration in milliseconds
                     const totalMilliseconds = match[4] * 10 + match[3] * 1000 + match[2] * 60000 + match[1] * 3600000
 
-                    this.emit("total", totalMilliseconds);
+                    this.emit("total", totalMilliseconds, totalString);
                 } else if (match = /fps=([0-9.]+).*time=([0-9]{2}):([0-9]{2}):([0-9]{2}).([0-9]{2})/.exec(dataString)) {
 
                     const progressString = `${match[2]}:${match[3]}:${match[4]}.${match[5]}`
@@ -79,11 +79,11 @@ export default class VideoMuxer extends EventEmitter {
                 if (code == 0) {
                     resolve();
                 } else {
-                    reject(new RuntimeException(`ffmpeg process exited with code ${code}`));
+                    reject(new RuntimeError(`ffmpeg process exited with code ${code}`));
                 }
             });
             proc.on('error', function (err) {
-                reject(new RuntimeException(err.message));
+                reject(new RuntimeError(err.message));
             })
         });
     }
@@ -110,14 +110,17 @@ export default class VideoMuxer extends EventEmitter {
 
         let t = 0;
         for (const font of this.fonts) {
-            const fileEnding = font.split(".").pop().trim().toLowerCase();
-            let mimeType;
+            const fileEnding = font.split(".").pop()?.trim().toLowerCase() ?? "unknown";
+            let mimeType: string;
 
             // https://github.com/FFmpeg/FFmpeg/blob/master/libavformat/matroska.c#L131
             if (fileEnding == "ttf") {
                 mimeType = "application/x-truetype-font";
             } else if (fileEnding == "otf") {
                 mimeType = "application/vnd.ms-opentype";
+            } else {
+                console.log("unknown font format: " + fileEnding)
+                break;
             }
 
             command.push("-attach", font);

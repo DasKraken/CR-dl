@@ -1,33 +1,21 @@
-import { UserInputException } from "./Exceptions";
+import { UserInputError, RuntimeError } from "../Errors";
 import * as langs from 'langs';
 import * as m3u8 from 'm3u8';
-function parseM3U(data: string) {
-    return new Promise((resolve, reject) => {
-        const parser = m3u8.createStream();
-        // @ts-ignore
-        parser.on('m3u', function (m3u) {
-            resolve(m3u);
-            // fully parsed m3u file
-        });
-        // @ts-ignore
-        parser.on('error', function (err) {
-            reject(err);
-        });
-        // @ts-ignore
-        parser.write(data)
-        // @ts-ignore
-        parser.end();
-    })
-}
+import { Requester, RequesterCdn } from "../types/Requester";
+import { VideoInfo, SubtitleInfo, StreamInfo } from "../interfaces/video";
+import { parseM3U } from "../Utils";
+import { M3U, StreamItem } from "../types/m3u";
+import { Language } from "../types/language";
 
-let _httpClient;
 
-class SubtitleVilosPlayer {
-    _sub: VilosMediaConfigSubtitle;
+class VilosSubtitleInfo implements SubtitleInfo {
+    _sub: VilosVideoInfoConfigSubtitle;
     _isDefault: boolean;
-    constructor(sub: VilosMediaConfigSubtitle, isDefault: boolean) {
+    _requester: RequesterCdn;
+    constructor(sub: VilosVideoInfoConfigSubtitle, isDefault: boolean, requester: RequesterCdn) {
         this._sub = sub;
         this._isDefault = isDefault;
+        this._requester = requester;
     }
     async getTitle(): Promise<string> {
         return this._sub.title;
@@ -39,18 +27,18 @@ class SubtitleVilosPlayer {
         return langs.where("1", this._sub.language.substring(0, 2))["2T"];
     }
     async getData(): Promise<string> {
-        return (await _httpClient.get(this._sub.url)).body;
+        return (await this._requester.get(this._sub.url)).body.toString();
     }
     async isDefault(): Promise<boolean> {
         return this._isDefault;
     }
 }
 
-class StreamVilosPlayer {
-    _stream;
-    _hardsubLang: string;
-    _audioLang: string;
-    constructor(stream, hardsubLang: string, audioLang: string) {
+class StreamVilosPlayer implements StreamInfo {
+    _stream: StreamItem;
+    _hardsubLang: Language;
+    _audioLang: Language;
+    constructor(stream: StreamItem, hardsubLang: Language, audioLang: Language) {
         this._stream = stream;
         this._hardsubLang = hardsubLang;
         this._audioLang = audioLang;
@@ -62,36 +50,39 @@ class StreamVilosPlayer {
         return this._audioLang;
     }
     getWidth(): number {
-        return this._stream.attributes.attributes.resolution[0];
+        return this._stream.attributes.attributes.resolution?.[0] ?? 0;
     }
     getHeight(): number {
-        return this._stream.attributes.attributes.resolution[1];
+        return this._stream.attributes.attributes.resolution?.[1] ?? 0;
     }
     getUrl(): string {
+        if (!this._stream.properties.uri) throw new RuntimeError("No URI for Stream found");
         return this._stream.properties.uri;
     }
 }
 
-interface VilosMediaConfigSubtitle {
+interface VilosVideoInfoConfigSubtitle {
     language: string;
     url: string;
     title: string;
-    format: string; // currently always "ass"
+    format: "ass";
 }
-interface VilosMediaConfigStream {
-    format: string; //  "adaptive_dash", "adaptive_hls", "drm_adaptive_dash", "drm_multitrack_adaptive_hls_v2", 
-    // "multitrack_adaptive_hls_v2", "vo_adaptive_dash", "vo_adaptive_hls", "vo_drm_adaptive_dash", "vo_drm_adaptive_hls"
-    audio_lang: string;
-    hardsub_lang: string;
+interface VilosVideoInfoConfigStream {
+    format: "adaptive_dash" | "adaptive_hls" | "drm_adaptive_dash" | "drm_multitrack_adaptive_hls_v2"
+    | "multitrack_adaptive_hls_v2" | "vo_adaptive_dash" | "vo_adaptive_hls" | "vo_drm_adaptive_dash"
+    | "vo_drm_adaptive_hls" | "trailer_hls" | "trailer_dash"
+    audio_lang: Language;
+    hardsub_lang: Language;
     url: string;
     resolution: string; // currently always "adaptive"
 
     data?: string;
 }
 
-interface VilosMediaConfig {
+interface VilosVideoInfoConfig {
     metadata: {
         id: string;
+        series_id: string;
         type: string;
         channel_id: any;
         title: string;
@@ -99,27 +90,55 @@ interface VilosMediaConfig {
         episode_number: string;
         display_episode_number: string;
         is_mature: boolean;
+        up_next: {
+            title: string;
+            id: string;
+            channel_id: any;
+            channel_name: any;
+            description: string;
+            display_episode_number: string;
+            duration: number;
+            episode_number: string;
+            episode_title: string;
+            extra_title: any;
+            is_mature: boolean;
+            is_premium_only: boolean;
+            media_title: string;
+            release_date: string;
+            season_title: string;
+            series_id: string;
+            series_title: string;
+            type: string;
+            thumbnail: {
+                url: string;
+                width: number;
+                height: number;
+            };
+        };
         duration: number;
     };
     thumbnail: {
         url: string;
     };
-    streams: VilosMediaConfigStream[];
+    streams: VilosVideoInfoConfigStream[];
     ad_breaks: {
         type: string; // "preroll"/"midroll"
         offset: number;
     }[];
-    subtitles: VilosMediaConfigSubtitle[];
+    subtitles: VilosVideoInfoConfigSubtitle[];
 }
 
-export class MediaVilosPlayer {
+export class VilosVideoInfo implements VideoInfo {
     _html: string;
     _url: string;
-    _language: string;
-    _config: VilosMediaConfig;
-    constructor(html: string, url: string) {
+    _language: Language;
+    _config: VilosVideoInfoConfig;
+    _requester: RequesterCdn;
+
+    constructor(html: string, url: string, requester: RequesterCdn) {
         this._html = html;
         this._url = url;
+        this._requester = requester;
 
         const matchConfig = this._html.match(/vilos\.config\.media = (.+);/);
         if (!matchConfig) throw new Error("Couldn't find video config on webpage.");
@@ -131,24 +150,24 @@ export class MediaVilosPlayer {
 
 
     };
-    async getSubtitles(): Promise<SubtitleVilosPlayer[]> {
-        const subtitles: SubtitleVilosPlayer[] = [];
+    async getSubtitles(): Promise<VilosSubtitleInfo[]> {
+        const subtitles: VilosSubtitleInfo[] = [];
         for (let i = 0; i < this._config.subtitles.length; i++) {
             const isDefault = this._config.subtitles[i].language == this._language;
-            subtitles.push(new SubtitleVilosPlayer(this._config.subtitles[i], isDefault));
+            subtitles.push(new VilosSubtitleInfo(this._config.subtitles[i], isDefault, this._requester));
         }
         return subtitles;
     }
 
-    async getDefaultLanguage(): Promise<string> {
+    async getDefaultLanguage(): Promise<Language> {
         return this._language;
     }
 
-    async _loadStreamData(stream: VilosMediaConfigStream): Promise<string> {
+    async _loadStreamData(stream: VilosVideoInfoConfigStream): Promise<string> {
         if (stream.data) return stream.data;
-        return (await _httpClient.get(stream.url)).body;
+        return (await this._requester.get(stream.url)).body.toString();
     }
-    async _getStreamForHardsubLang(hardSubLang: string) {
+    async _getStreamForHardsubLang(hardSubLang: Language) {
         for (const stream of this._config.streams) {
             if (stream.hardsub_lang == hardSubLang && stream.format == "adaptive_hls") {
                 return stream;
@@ -156,12 +175,12 @@ export class MediaVilosPlayer {
         }
         return null;
     }
-    async getAvailableResolutions(hardSubLang: string) {
+    async getAvailableResolutions(hardSubLang: Language) {
 
 
         const selectedStream = await this._getStreamForHardsubLang(hardSubLang);
         if (!selectedStream) {
-            throw new UserInputException("No stream found for hardsub language: " + hardSubLang);
+            throw new UserInputError("No stream found for hardsub language: " + hardSubLang);
         }
         if (!selectedStream.data) {
             selectedStream.data = await this._loadStreamData(selectedStream);
@@ -178,20 +197,20 @@ export class MediaVilosPlayer {
         }
         return availableResolutions;
     }
-    async getStreams(resolution, hardSubLang): Promise<StreamVilosPlayer[]> {
+    async getStreams(resolution: number, hardSubLang: Language): Promise<StreamVilosPlayer[]> {
         const selectedStream = await this._getStreamForHardsubLang(hardSubLang);
         if (!selectedStream) {
-            throw new UserInputException("No stream found for hardsub language: " + hardSubLang);
+            throw new UserInputError("No stream found for hardsub language: " + hardSubLang);
         }
         if (!selectedStream.data) {
             selectedStream.data = await this._loadStreamData(selectedStream);
         }
 
         // selectedStream is a group of Streams in different resolutions. We need to filter out one resolution.
-        const m3uData: any = await parseM3U(selectedStream.data);
+        const m3uData: M3U = await parseM3U(selectedStream.data);
         const streamList: StreamVilosPlayer[] = [];
         for (const streamItem of m3uData.items.StreamItem) {
-            if (streamItem.attributes.attributes.resolution[1] == resolution) {
+            if (streamItem.attributes.attributes.resolution?.[1] == resolution) {
                 streamList.push(new StreamVilosPlayer(streamItem, selectedStream.hardsub_lang, selectedStream.audio_lang))
             }
         }
@@ -203,19 +222,21 @@ export class MediaVilosPlayer {
     }
     async getSeriesTitle(): Promise<string> {
         const seriesTitleMatch = /"mediaTitle":("[^"]+")/.exec(this._html);
-        const seriesTitle = seriesTitleMatch ? JSON.parse(seriesTitleMatch[1]) : undefined;
+        const seriesTitle: string = seriesTitleMatch ? JSON.parse(seriesTitleMatch[1]) : "undefined";
         return seriesTitle;
     }
     async getSeasonTitle(): Promise<string> {
         const seasonTitleMatch = /"seasonTitle":("[^"]+")/.exec(this._html);
-        const seasonTitle = seasonTitleMatch ? JSON.parse(seasonTitleMatch[1]) : undefined;
+        const seasonTitle = seasonTitleMatch ? JSON.parse(seasonTitleMatch[1]) : "undefined";
         return seasonTitle;
     }
     async getEpisodeNumber(): Promise<string> {
         return this._config.metadata.episode_number;
     }
-}
-
-export function setHttpClientV(httpClient) {
-    _httpClient = new httpClient();;
+    async isRegionBlocked(): Promise<boolean> {
+        return this._config.streams.length == 0;
+    }
+    async isPremiumBlocked(): Promise<boolean> {
+        return this._html.includes('class="showmedia-trailer-notice"');
+    }
 }
