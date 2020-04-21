@@ -1,8 +1,11 @@
 import * as mkdirp from 'mkdirp';
 import * as path from 'path';
 import * as fs from 'fs';
-import * as request from "request";
-import {NetworkError} from "../Errors";
+import * as util from "util";
+import * as stream from "stream";
+import { NetworkError } from "../Errors";
+import { RequesterCdn } from '../types/Requester';
+const pipeline = util.promisify(stream.pipeline);
 
 const fontsRootUrl = "https://static.crunchyroll.com/vilos/assets/fonts/";
 
@@ -77,31 +80,13 @@ for (let f in fontFiles) {
     }
 }
 
+export async function downloadFontsFromSubtitles(requester: RequesterCdn, subtitles: { path: string }[], destination: string) {
 
-async function downloadFile(uri, dest, options) {
-    await new Promise((resolve, reject) => {
-        request(uri, {
-            forever: true,
-            timeout: 20000,
-            proxy: options.httpProxy
-        }).on("error", (e) => {
-            reject(new NetworkError(e.message));
-        }).on("response", (response) => {
-            if (response.statusCode != 200) {
-                reject(new NetworkError("HTTP status code: " + (response.statusCode)));
-            }
-        }).pipe(fs.createWriteStream(dest)).on("finish", (resolve));
-    });
-
-}
-
-exports.downloadFontsFromSubtitles = async (_httpClient, subtitles, options) => {
-
-    const dir = path.join(options.tmpDir, "Fonts")
-    mkdirp.sync(dir);
+    //const dir = path.join(options.tmpDir, "Fonts")
+    await fs.promises.mkdir(destination, { recursive: true });
 
     const fontsToInclude: string[] = [];
-    const fontsInSub = {};
+    const fontsInSub: Record<string, boolean> = {};
 
     for (const subtitle of subtitles) {
 
@@ -113,12 +98,15 @@ exports.downloadFontsFromSubtitles = async (_httpClient, subtitles, options) => 
 
         let matches;
         while ((matches = regex1.exec(subContent)) || (matches = regex2.exec(subContent))) {
-            let font = matches[1].trim().toLowerCase();
+            let font: string = matches[1].trim().toLowerCase();
             if (!(font in fontsInSub)) {
                 fontsInSub[font] = true;
                 if (font in availableFonts) {
-                    const filePath = path.join(dir, availableFonts[font].split('/').pop());
-                    await downloadFile(availableFonts[font], filePath, options);
+                    const filePath = path.join(destination, availableFonts[font].split('/').pop());
+                    await pipeline(
+                        requester.stream(availableFonts[font]),
+                        fs.createWriteStream(filePath)
+                    );
                     fontsToInclude.push(filePath);
                 } else {
                     console.log("Unknown font: " + font)

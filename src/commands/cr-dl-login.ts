@@ -1,17 +1,17 @@
 #!/usr/bin/env node
-import { Command } from 'commander';
-import * as read from 'read';
-import { loadCookies, getRequester, saveCookies } from './common';
-import { CrDl } from '../api/CrDlNew';
-import { UserInputError } from '../Errors';
+import { Command } from "commander";
+import * as read from "read";
+import { loadCookies, getRequester, saveCookies } from "./common";
+import { CrDl } from "../api/CrDlNew";
+import { UserInputError } from "../Errors";
 
 export const login = new Command();
 
 login
   .name("login")
-  .description("Login into CR. Cookies are stores in 'cookies.data'.")
-  .arguments('[username] [password]')
-  .option('--proxy <proxy>', 'HTTP proxy used to access Crunchyroll.')
+  .description("Login into CR. Cookies are stores in \"cookies.data\".")
+  .arguments("[username] [password]")
+  .option("--proxy <proxy>", "HTTP proxy used to access Crunchyroll.")
   .action(async function (username: string | undefined, password: string | undefined, cmdObj) {
 
     const options: { proxy?: string } = { proxy: cmdObj.proxy };

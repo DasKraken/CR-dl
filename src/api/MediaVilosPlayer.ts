@@ -20,7 +20,7 @@ class VilosSubtitleInfo implements SubtitleInfo {
     async getTitle(): Promise<string> {
         return this._sub.title;
     }
-    async getLanguage(): Promise<string> {
+    async getLanguage(): Promise<Language> {
         return this._sub.language;
     }
     async getLanguageISO6392T(): Promise<string> {
@@ -62,7 +62,7 @@ class StreamVilosPlayer implements StreamInfo {
 }
 
 interface VilosVideoInfoConfigSubtitle {
-    language: string;
+    language: Language;
     url: string;
     title: string;
     format: "ass";
@@ -167,7 +167,7 @@ export class VilosVideoInfo implements VideoInfo {
         if (stream.data) return stream.data;
         return (await this._requester.get(stream.url)).body.toString();
     }
-    async _getStreamForHardsubLang(hardSubLang: Language) {
+    async _getStreamForHardsubLang(hardSubLang: Language | null) {
         for (const stream of this._config.streams) {
             if (stream.hardsub_lang == hardSubLang && stream.format == "adaptive_hls") {
                 return stream;
@@ -197,7 +197,7 @@ export class VilosVideoInfo implements VideoInfo {
         }
         return availableResolutions;
     }
-    async getStreams(resolution: number, hardSubLang: Language): Promise<StreamVilosPlayer[]> {
+    async getStreams(resolution: number, hardSubLang: Language | null): Promise<StreamVilosPlayer[]> {
         const selectedStream = await this._getStreamForHardsubLang(hardSubLang);
         if (!selectedStream) {
             throw new UserInputError("No stream found for hardsub language: " + hardSubLang);

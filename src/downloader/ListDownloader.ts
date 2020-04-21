@@ -8,6 +8,10 @@ import * as async from "async";
 import * as fs from "fs";
 import { EventEmitter } from "events";
 import { DownloadItem } from "../types/download";
+import { RequesterCdn } from "../types/Requester";
+import * as util from "util";
+import * as stream from "stream";
+const pipeline = util.promisify(stream.pipeline);
 
 
 export default class ListDownloader extends EventEmitter {
@@ -92,7 +96,7 @@ export default class ListDownloader extends EventEmitter {
         this.filesInProgress++;
 
         const file = this.list[index];
-        for (let attempt = 0; attempt < this.options.maxAttempts; attempt++) {
+        for (let attempt = 0; attempt < 5; attempt++) {
             try {
                 await new Promise((resolve, reject) => {
                     file.downloadedSize = 0;
@@ -138,7 +142,9 @@ export default class ListDownloader extends EventEmitter {
         this.lastSpeedCheck = Date.now();
         this.downloadedSinceCheck = 0;
         return new Promise((resolve, reject) => {
-            async.forEachOfLimit(this.list, this.options.connections, (value, key: number, callback) => {
+            //TODO:
+            console.log("fg")
+            async.forEachOfLimit(this.list, 5, (value, key: number, callback) => {
                 this.downloadFile(key).then(() => { callback() }, callback)
             }, err => {
                 if (err) {

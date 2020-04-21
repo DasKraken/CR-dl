@@ -16,7 +16,7 @@ export function loadCookies() {
 
 export function saveCookies() {
     // @ts-ignore
-    fs.writeFileSync("cookies.data", JSON.stringify(jar._jar.serializeSync()));
+    fs.writeFileSync("cookies.data", JSON.stringify(cookies._jar.serializeSync()));
 }
 
 export function getRequester(options: { proxy?: string }) {

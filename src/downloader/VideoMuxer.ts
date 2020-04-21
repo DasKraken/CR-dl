@@ -10,7 +10,7 @@ import { spawn } from 'child_process';
 
 interface VideoMuxerOptions {
     input: string,
-    metadata,
+    metadata?,
     subtitles: LocalSubtitle[],
     fonts: string[],
     output: string
