@@ -14,8 +14,10 @@ import { downloadFontsFromSubtitles } from "../downloader/FontDownloader";
 import { Requester, RequesterCdn } from "../types/Requester";
 import * as format_ from 'string-format';
 import { M3uDownloader } from "../downloader/M3uDownloader";
-import ListDownloader from "../downloader/ListDownloader";
-import VideoMuxer from "../downloader/VideoMuxer";
+import { ListDownloader, DownloadUpdateOptions } from "../downloader/ListDownloader";
+import { VideoMuxer } from "../downloader/VideoMuxer";
+import * as cliProgress from "cli-progress";
+import * as prettyBytes from "pretty-bytes";
 const format = format_.create({
   scene: formatScene
 })
@@ -33,6 +35,7 @@ interface Options {
   attachFonts: boolean;
   subsOnly: boolean;
   output?: string;
+  retry: number;
 }
 
 let requester: Requester;
@@ -53,6 +56,7 @@ download
   .option("--attach-fonts", "Attach all fonts that are used in subtitles.")
   .option("--subs-only", "Download only subtitles. No Video.")
   .option("-o, --output <template>", "Output filename template, see the \"OUTPUT TEMPLATE\" in README for all the info.")
+  .option("--retry <N>", "Max number of download attempts before aborting.", "5")
   .action(async function (url: string, cmdObj) {
 
     console.log(cmdObj);
@@ -68,11 +72,16 @@ download
       hardsub: !!cmdObj.hardsub,
       attachFonts: !!cmdObj.attachFonts,
       subsOnly: !!cmdObj.subsOnly,
-      output: cmdObj.output
+      output: cmdObj.output,
+      retry: parseInt(cmdObj.retry)
     };
 
     if (isNaN(options.connections)) {
       console.log("--connections must be a number");
+      return;
+    }
+    if (isNaN(options.retry)) {
+      console.log("--retry must be a number");
       return;
     }
 
@@ -138,7 +147,7 @@ async function downloadVideo(url: string, crDl: CrDl, options: Options) {
 
   // Ensure options
   if (!options.defaultSub) {
-    if (options.subLang) {
+    if (options.subLang && options.subLang.length > 0) {
       options.defaultSub = options.subLang[0];
     } else if (subtitles.length == 0) {
       options.defaultSub = "none";
@@ -182,7 +191,7 @@ async function downloadVideo(url: string, crDl: CrDl, options: Options) {
   // download fonts
   let fontsToInclude: string[] = [];
   if (options.attachFonts) {
-    fontsToInclude = await downloadFontsFromSubtitles(requesterCdn, subsToInclude, path.join(tmpDir, "Fonts"));
+    fontsToInclude = await downloadFontsFromSubtitles(requesterCdn, options.retry, subsToInclude, path.join(tmpDir, "Fonts"));
   }
 
   //console.log(fontsToInclude);
@@ -244,18 +253,48 @@ async function downloadVideo(url: string, crDl: CrDl, options: Options) {
     // === Key File ===
     const keyFile = m3u8File.getKeyFile();
     if (keyFile) {
-      // not stream for retry. TODO: improve
-      await fs.promises.writeFile(keyFile.destination, (await requesterCdn.get(keyFile.url)).body);
+
+      await ListDownloader.safeDownload(keyFile.url, keyFile.destination, 5, requesterCdn);
     }
 
-    // === Video Files ===
-    const listDownloader = new ListDownloader(m3u8File.getVideoFiles(), {});
-    listDownloader.on("update", (info) => { console.log(info) })
-    await listDownloader.startDownload();
+    // === Video Files Download ===
+    const listDownloader = new ListDownloader(m3u8File.getVideoFiles(), options.retry, options.connections, requesterCdn);
+    const bar1 = new cliProgress.Bar({
+      format: 'downloading [{bar}] {percentage}% | {downSize}/{estSize} | Speed: {speed}/s | ETA: {myEta}s'
+    }, cliProgress.Presets.shades_classic);
+    bar1.start(1, 0);
+    listDownloader.on("update", (data: DownloadUpdateOptions) => {
+      bar1.setTotal(data.estimatedSize);
+      bar1.update(data.downloadedSize, {
+        downSize: prettyBytes(data.downloadedSize),
+        estSize: prettyBytes(data.estimatedSize),
+        speed: prettyBytes(data.speed),
+        myEta: Math.floor((data.estimatedSize - data.downloadedSize) / data.speed)
+      });
+    })
+    //await listDownloader.startDownload();
+    bar1.stop();
 
+    // === Video Muxing ===
     const videoMuxer = new VideoMuxer({ input: m3u8FilePath, subtitles: subsToInclude, fonts: fontsToInclude, output: outputPath });
-
+    let totalDuration = "";
+    const bar2 = new cliProgress.Bar({
+      format: 'muxing [{bar}] {percentage}% | {curDuration}/{totalDuration} | Speed: {fps} fps'
+    }, cliProgress.Presets.shades_classic);
+    bar2.start(1, 0);
+    videoMuxer.on("total", (totalMilliseconds: number, totalString: string) => {
+      bar2.setTotal(totalMilliseconds);
+      totalDuration = totalString;
+    });
+    videoMuxer.on("progress", (progressMilliseconds: number, progressString: string, fps: number) => {
+      bar2.update(progressMilliseconds, {
+        curDuration: progressString,
+        totalDuration: totalDuration,
+        fps
+      })
+    });
     await videoMuxer.run();
+    bar2.stop();
   }
 
 

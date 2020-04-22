@@ -5,6 +5,7 @@ import * as util from "util";
 import * as stream from "stream";
 import { NetworkError } from "../Errors";
 import { RequesterCdn } from '../types/Requester';
+import { ListDownloader } from './ListDownloader';
 const pipeline = util.promisify(stream.pipeline);
 
 const fontsRootUrl = "https://static.crunchyroll.com/vilos/assets/fonts/";
@@ -80,7 +81,7 @@ for (let f in fontFiles) {
     }
 }
 
-export async function downloadFontsFromSubtitles(requester: RequesterCdn, subtitles: { path: string }[], destination: string) {
+export async function downloadFontsFromSubtitles(requester: RequesterCdn, retry: number, subtitles: { path: string }[], destination: string) {
 
     //const dir = path.join(options.tmpDir, "Fonts")
     await fs.promises.mkdir(destination, { recursive: true });
@@ -103,10 +104,7 @@ export async function downloadFontsFromSubtitles(requester: RequesterCdn, subtit
                 fontsInSub[font] = true;
                 if (font in availableFonts) {
                     const filePath = path.join(destination, availableFonts[font].split('/').pop());
-                    await pipeline(
-                        requester.stream(availableFonts[font]),
-                        fs.createWriteStream(filePath)
-                    );
+                    await ListDownloader.safeDownload(availableFonts[font], filePath, retry, requester);
                     fontsToInclude.push(filePath);
                 } else {
                     console.log("Unknown font: " + font)

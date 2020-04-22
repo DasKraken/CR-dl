@@ -6,17 +6,47 @@ import {
 import { EventEmitter } from "events";
 import { LocalSubtitle } from "../types/Subtitle";
 import { spawn } from 'child_process';
+import * as util from 'util';
+import * as readline from 'readline';
 
 
-interface VideoMuxerOptions {
+function parseProgressLine(line: string): Record<string, string> | null {
+    const progress: Record<string, string> = {};
+
+    // Remove all spaces after = and trim
+    line = line.replace(/=\s+/g, '=').trim();
+    const progressParts = line.split(' ');
+
+    // Split every progress part by "=" to get key and value
+    for (let i = 0; i < progressParts.length; i++) {
+        const progressSplit = progressParts[i].split('=', 2);
+        const key = progressSplit[0];
+        const value = progressSplit[1];
+
+        // This is not a progress line
+        if (typeof value === 'undefined')
+            return null;
+
+        progress[key] = value;
+    }
+
+    return progress;
+}
+
+export interface VideoMuxerOptions {
     input: string,
     metadata?,
     subtitles: LocalSubtitle[],
     fonts: string[],
     output: string
 }
-
-export default class VideoMuxer extends EventEmitter {
+export declare interface VideoMuxer {
+    on(name: "info", listener: (data: Buffer) => void): this
+    on(name: "total", listener: (totalMilliseconds: number, totalString: string) => void): this
+    on(name: "progress", listener: (progressMilliseconds: number, progressString: string, fps: number) => void): this
+    on(name: "end", listener: (code: number) => void): this
+}
+export class VideoMuxer extends EventEmitter {
     input: string;
     subtitles: LocalSubtitle[];
     fonts: string[];
@@ -40,36 +70,47 @@ export default class VideoMuxer extends EventEmitter {
             const command = this._makeCommand();
 
             //console.log(command)
-            const proc = spawn('ffmpeg', command);
+            const proc = spawn('ffmpeg', command, {
+                windowsHide: true
+            });
             proc.stdout.on('data', function (data) {
                 console.log('[ffmpeg]: ' + data);
             });
+            proc.stderr.setEncoding("utf8");
+
+            const rl = readline.createInterface({
+                input: proc.stderr
+            });
 
 
-            proc.stderr.on('data', function (data: Buffer) {
+            rl.on('line', (data: string) => {
                 const dataString = data.toString();
+                //console.log(util.inspect(dataString))
                 this.emit("info", data);
-
-
-
-                let match;
+                let match: RegExpExecArray | null;
                 if (match = /Duration: ([0-9]{2}):([0-9]{2}):([0-9]{2}).([0-9]{2}),/.exec(dataString)) {
 
                     const totalString = `${match[1]}:${match[2]}:${match[3]}.${match[4]}`
 
                     // Video duration in milliseconds
-                    const totalMilliseconds = match[4] * 10 + match[3] * 1000 + match[2] * 60000 + match[1] * 3600000
+                    const totalMilliseconds = parseInt(match[4]) * 10 + parseInt(match[3]) * 1000 + parseInt(match[2]) * 60000 + parseInt(match[1]) * 3600000
 
+                    //console.log("total", totalMilliseconds, totalString)
                     this.emit("total", totalMilliseconds, totalString);
-                } else if (match = /fps=([0-9.]+).*time=([0-9]{2}):([0-9]{2}):([0-9]{2}).([0-9]{2})/.exec(dataString)) {
+                    return;
+                }
 
-                    const progressString = `${match[2]}:${match[3]}:${match[4]}.${match[5]}`
+                const progress = parseProgressLine(dataString);
+                if (progress) {
+                    const match = /([0-9]{2}):([0-9]{2}):([0-9]{2}).([0-9]{2})/.exec(progress.time);
+                    if (match) {
+                        const progressString = progress.time;
 
-                    // Video progress in milliseconds
-                    const progressMilliseconds = match[5] * 10 + match[4] * 1000 + match[3] * 60000 + match[2] * 3600000
-                    const fps = match[1];
-
-                    this.emit("progress", progressMilliseconds, progressString, fps);
+                        // Video progress in milliseconds
+                        const progressMilliseconds = parseInt(match[4]) * 10 + parseInt(match[3]) * 1000 + parseInt(match[2]) * 60000 + parseInt(match[1]) * 3600000
+                        //console.log("progress", progressMilliseconds, progressString, parseInt(progress.fps))
+                        this.emit("progress", progressMilliseconds, progressString, parseInt(progress.fps));
+                    }
                 }
 
             });
@@ -88,7 +129,7 @@ export default class VideoMuxer extends EventEmitter {
         });
     }
     _makeCommand() {
-        const command = ["-allowed_extensions", "ALL", "-y", "-i", this.input];
+        const command = ["-stats", "-allowed_extensions", "ALL", "-y", "-i", this.input];
 
         for (const subtitle of this.subtitles) {
             command.push("-i", subtitle.path)

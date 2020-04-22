@@ -14,7 +14,7 @@ function getProxyAuth(proxyURL: URL): string | undefined {
     }
 }
 
-export default function (proxy?: string): RequesterCdn {
+export default function (proxy?: string, retry?: number): RequesterCdn {
     const proxyURL = proxy ? new URL(proxy) : undefined;
     let agent: AgentByProtocol | undefined;
     if (proxyURL) {
@@ -60,10 +60,10 @@ export default function (proxy?: string): RequesterCdn {
     }
     return {
         stream: (url: string): Readable => {
-            return got.stream(url, { agent });
+            return got.stream(url, { agent, retry });
         },
         get: (url: string): Promise<{ body: Buffer, url: string }> => {
-            return got.get(url, { responseType: "buffer", agent });
+            return got.get(url, { responseType: "buffer", agent, retry });
         }
     }
 
