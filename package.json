@@ -11,13 +11,12 @@
   "author": "",
   "license": "MIT",
   "bin": {
-    "cr-dl": "./index.js"
+    "cr-dl": "./lib/commands/cr-dl.js"
   },
   "engines": {
     "node": ">=10.1.0"
   },
   "dependencies": {
-    "argparse": "^1.0.10",
     "async": "^3.2.0",
     "cli-progress": "^3.7.0",
     "cloudscraper": "^4.6.0",

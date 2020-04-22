@@ -2,7 +2,7 @@
 import { Command } from "commander";
 import * as read from "read";
 import { loadCookies, getRequester, saveCookies } from "./common";
-import { CrDl } from "../api/CrDlNew";
+import { CrDl } from "../api/CrDl";
 import { UserInputError } from "../Errors";
 
 export const login = new Command();
