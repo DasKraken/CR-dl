@@ -221,12 +221,12 @@ export class VilosVideoInfo implements VideoInfo {
         return this._config.metadata.title;
     }
     async getSeriesTitle(): Promise<string> {
-        const seriesTitleMatch = /"mediaTitle":("[^"]+")/.exec(this._html);
+        const seriesTitleMatch = /"mediaTitle":(".*?[^\\]")/.exec(this._html);
         const seriesTitle: string = seriesTitleMatch ? JSON.parse(seriesTitleMatch[1]) : "undefined";
         return seriesTitle;
     }
     async getSeasonTitle(): Promise<string> {
-        const seasonTitleMatch = /"seasonTitle":("[^"]+")/.exec(this._html);
+        const seasonTitleMatch = /"seasonTitle":(".*?[^\\]")/.exec(this._html);
         const seasonTitle = seasonTitleMatch ? JSON.parse(seasonTitleMatch[1]) : "undefined";
         return seasonTitle;
     }
