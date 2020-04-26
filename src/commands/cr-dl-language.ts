@@ -11,7 +11,7 @@ export const language = new Command();
 language
   .name("language").alias("lang")
   .description("Get or set the language of CR and metadata. (Note 1: It doesn't change default subtitle language. Note 2: Videos that aren't available in selected language may not work). Available options are: " + languages.join(", "))
-  .arguments("[language]>")
+  .arguments("[language]")
   .option("--proxy <proxy>", "HTTP proxy used to access Crunchyroll.")
   .action(async function (language: Language | undefined, cmdObj) {
 

@@ -130,7 +130,8 @@ export class CrDl {
         let seasonNum = -1;
         const page: string = (await this._requester.get(url)).body.toString();
 
-        const regionBlockedSeasons: string[] = Array.from(page.matchAll(/<p class="availability-notes-low">[^<]+: ([^<]+))<\/p>/)).map((v: RegExpMatchArray) => v[1]);
+        
+        const regionBlockedSeasons: string[] = Array.from(page.matchAll(/<p class="availability-notes-low">[^<]+: ([^<]+)<\/p>/)).map((v: RegExpMatchArray) => v[1]);
         const languageBlockedSeasons: string[] = Array.from(page.matchAll(/<p class="availability-notes-low">([^<]+) (?:ist in|no está|is not|n'est pas|non è|недоступен)[^<]+<\/p>/)).map((v: RegExpMatchArray) => v[1]);
 
 

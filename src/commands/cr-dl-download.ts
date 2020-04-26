@@ -2,7 +2,7 @@
 import { Command } from "commander";
 import * as read from "read";
 import { loadCookies, getRequester, saveCookies, getRequesterCdn } from "./common";
-import { CrDl } from "../api/CrDl";
+import { CrDl, Season, Episode } from "../api/CrDl";
 import { UserInputError, RuntimeError } from "../Errors";
 import { languages, Language } from "../types/language";
 import { makeid, pad, toFilename, formatScene } from "../Utils";
@@ -36,6 +36,8 @@ interface Options {
   subsOnly: boolean;
   output?: string;
   retry: number;
+  season?: string[];
+  episode?: string[];
 }
 
 let requester: Requester;
@@ -51,12 +53,14 @@ download
   .option("-c, --connections <connections>", "Number of simultaneous connections", "5")
   .option("--list-subs", "Don't download. List all available subtitles for the video")
   .option("--hardsub", "Download hardsubbed video stream. Only one subtitle specified by --subDefault will be included")
-  .option("--default-sub LANG", "Specify subtitle language to set as default. (eg. deDE) (Default: if --subLangs defined: first entry, otherwise: crunchyroll default)")
-  .option("--sub-lang LANGS", "Specify subtitle languages as a comma separated list to include in video (eg. deDE,enUS). Use --list-subs for available language tags. (Default: All available)")
+  .option("--default-sub <LANG>", "Specify subtitle language to set as default. (eg. deDE) (Default: if --subLangs defined: first entry, otherwise: crunchyroll default)")
+  .option("--sub-lang <LANGS>", "Specify subtitle languages as a comma separated list to include in video (eg. deDE,enUS). Use --list-subs for available language tags. (Default: All available)")
   .option("--attach-fonts", "Attach all fonts that are used in subtitles.")
   .option("--subs-only", "Download only subtitles. No Video.")
   .option("-o, --output <template>", "Output filename template, see the \"OUTPUT TEMPLATE\" in README for all the info.")
   .option("--retry <N>", "Max number of download attempts before aborting.", "5")
+  .option("--season <LIST>", "A season number or a comma-separated list (without spaces) of season numbers can be provided to select which should be downloaded (eg. 1,2). Works only for series-links. Note: Season 1 is the bottom-most season on the website.")
+  .option("--episode <LIST>", "A comma-separated list of episode numbers to download. A ```-``` can be used to specify an range (eg. ```01,03-05,SP2```). Works only for series-links. If multiple seasons are available, you must specify one with --season.")
   .action(async function (url: string, cmdObj) {
 
     console.log(cmdObj);
@@ -73,7 +77,9 @@ download
       attachFonts: !!cmdObj.attachFonts,
       subsOnly: !!cmdObj.subsOnly,
       output: cmdObj.output,
-      retry: parseInt(cmdObj.retry)
+      retry: parseInt(cmdObj.retry),
+      season: cmdObj.season?.split(","),
+      episode: cmdObj.episode?.split(","),
     };
 
     if (isNaN(options.connections)) {
@@ -133,6 +139,7 @@ async function downloadVideo(url: string, crDl: CrDl, options: Options) {
   const tmpDir = "tmp_" + makeid(6) + "/";
 
   const media = await crDl.loadEpisode(url);
+  
   const subtitles = await media.getSubtitles();
 
   if (options.listSubs) {
@@ -272,11 +279,14 @@ async function downloadVideo(url: string, crDl: CrDl, options: Options) {
         myEta: Math.floor((data.estimatedSize - data.downloadedSize) / data.speed)
       });
     })
-    //await listDownloader.startDownload();
+    await listDownloader.startDownload();
     bar1.stop();
 
     // === Video Muxing ===
-    const videoMuxer = new VideoMuxer({ input: m3u8FilePath, subtitles: subsToInclude, fonts: fontsToInclude, output: outputPath });
+
+    const tmpPath = outputPath.substring(0, outputPath.lastIndexOf(".")) + ".tmp" + outputPath.substring(outputPath.lastIndexOf("."));
+
+    const videoMuxer = new VideoMuxer({ input: m3u8FilePath, subtitles: subsToInclude, fonts: fontsToInclude, output: tmpPath });
     let totalDuration = "";
     const bar2 = new cliProgress.Bar({
       format: 'muxing [{bar}] {percentage}% | {curDuration}/{totalDuration} | Speed: {fps} fps'
@@ -295,7 +305,9 @@ async function downloadVideo(url: string, crDl: CrDl, options: Options) {
     });
     await videoMuxer.run();
     bar2.stop();
+    await fs.promises.rename(tmpPath, outputPath);
   }
+
 
 
 }
@@ -309,8 +321,157 @@ async function downloadSubsOnly(subtitlesToInclude: SubToInclude[], outputPath: 
   }
 }
 
-async function downloadSeries(url: String, crDl: CrDl, options: Options) {
+async function downloadSeries(url: string, crDl: CrDl, options: Options) {
 
+  const list = await crDl.getEpisodesFormUrl(url);
+
+  let seasonsToDownload = list;
+
+  // select season(s)
+  if (options.season) {
+    const wantedSeasons: number[] = options.season.flatMap<number, string>((currentValue: string) => {
+      const bounds = currentValue.split("-");
+
+      if (bounds.length == 1) {
+        if (isNaN(parseInt(bounds[0]))) throw new UserInputError(`Season number "${bounds[0]}" invalid.`);
+        return parseInt(bounds[0]);
+      } else if (bounds.length == 2) {
+        if (isNaN(parseInt(bounds[0]))) throw new UserInputError(`Season number "${bounds[0]}" invalid.`);
+        if (isNaN(parseInt(bounds[1]))) throw new UserInputError(`Season number "${bounds[1]}" invalid.`);
+        const r: number[] = [];
+        for (let i = parseInt(bounds[0]); i <= parseInt(bounds[1]); i++) {
+          r.push(i - 1);
+        }
+        return r;
+      } else {
+        throw new UserInputError(`Season number "${currentValue}" invalid.`);
+      }
+    });
+    seasonsToDownload = [];
+    for (const s of wantedSeasons) {
+      if (!list[s]) throw new UserInputError(`Season ${s + 1} not available.`);
+      seasonsToDownload.push(list[s]);
+    }
+  }
+
+
+  // notify of restricted seasons
+  for (const s of seasonsToDownload) {
+    if (s.isRegionBlocked) {
+      console.log(`Notice: Season ${s.name} not available in your region and will be skipped.`);
+    } else if (s.isLanguageUnavailable) {
+      console.log(`Notice: Season ${s.name} not available in selected language and will be skipped.`);
+    } else if (s.episodes.length === 0) {
+      console.log(`Notice: Season ${s.name} has no episodes and will be skipped.`);
+    }
+  }
+
+  // Remove empty seasons
+  seasonsToDownload = seasonsToDownload.filter(s => s.episodes.length > 0);
+  if (seasonsToDownload.length == 0) throw new UserInputError("No Episodes found.")
+
+  // select episode(s)
+  if (options.episode) {
+    // if episode number numeric, convert string to number and back to string to normalize representation (e.g. leading zeros)
+    seasonsToDownload.forEach(s => s.episodes.forEach(e => { if (!isNaN(Number(e.number))) e.number = Number(e.number).toString(); }));
+
+    type episodePosition = { seasonIndex: number, episodeIndex: number };
+
+    const getEpisodeFromNumber = (number: string) => {
+      if (!isNaN(Number(number))) number = Number(number).toString();
+
+      const results: episodePosition[] = [];
+      for (let seasonIndex = 0; seasonIndex < seasonsToDownload.length; seasonIndex++) {
+        const season = seasonsToDownload[seasonIndex].episodes;
+        for (let episodeIndex = 0; episodeIndex < season.length; episodeIndex++) {
+          const episode = season[episodeIndex];
+          if (episode.number == number) {
+            results.push({ seasonIndex, episodeIndex })
+          }
+        }
+      }
+      if (results.length == 0) {
+        throw new UserInputError(`Episode "${number}" not found.`)
+      } else if (results.length == 1) {
+        return results[0];
+      } else {
+        let areAllMatchesInSameSeason = true;
+        for (let index = 0; index < results.length - 1; index++) {
+          if (results[index].seasonIndex != results[index + 1].seasonIndex)
+            areAllMatchesInSameSeason = false;
+        }
+        if (areAllMatchesInSameSeason) {
+          // allow multiple matches within a season otherwise we wouldn't be able to specify an episode
+          console.log(`Warning: Multiple episodes found matching "${number}". Selecting first.`)
+          return results[0];
+        } else {
+          throw new UserInputError(`Collision between seasons for episode "${number}". Please specify one season with --season to use --episode.`)
+        }
+      }
+    }
+    const addEpisodesInRange = (start: episodePosition, end: episodePosition) => {
+      let curSeason = start.seasonIndex;
+      let curEpisode = start.episodeIndex;
+      let result: Episode[] = [];
+
+      while (curSeason < end.seasonIndex || (curSeason == end.seasonIndex && curEpisode <= end.episodeIndex)) {
+        result.push(seasonsToDownload[curSeason].episodes[curEpisode]);
+
+        if (curEpisode < seasonsToDownload[curSeason].episodes.length - 1) {
+          curEpisode++;
+        } else {
+          // Range between seasons
+          curSeason++;
+          curEpisode = 0;
+        }
+      }
+      return result;
+    }
+
+
+    let episodesToDownload = options.episode.flatMap(n => {
+      const bounds = n.split("-");
+      if (bounds.length == 1) {
+        let ep = getEpisodeFromNumber(n);
+        return seasonsToDownload[ep.seasonIndex].episodes[ep.episodeIndex];
+      } else if (bounds.length == 2) {
+        const min = getEpisodeFromNumber(bounds[0]);
+        const max = getEpisodeFromNumber(bounds[1]);
+        return addEpisodesInRange(min, max);
+      } else {
+        throw new UserInputError("Invalid episode number: " + n);
+      }
+    });
+
+    seasonsToDownload.forEach(value => { value.episodes = value.episodes.filter(ep => episodesToDownload.includes(ep)) })
+  }
+
+
+
+  // Remove empty seasons (again)
+  seasonsToDownload = seasonsToDownload.filter(s => s.episodes.length > 0);
+
+  if (seasonsToDownload.length == 0) throw new UserInputError("No Episodes selected.")
+
+
+
+  //console.log(require('util').inspect(seasonsToDownload, false, null, true /* enable colors */))
+
+  console.log("Following episodes will be dowloaded:");
+
+  for (const s of seasonsToDownload) {
+    if (s.name !== "") console.log(`Season "${s.name}":`);
+    console.log(s.episodes.map(e => e.number).join(", "))
+    console.log();
+  }
+
+  for (const season of seasonsToDownload) {
+    for (const episode of season.episodes) {
+      console.log();
+      console.log(`Downloading S(${pad(seasonsToDownload.indexOf(season) + 1, 2)}/${pad(seasonsToDownload.length, 2)})E(${pad(season.episodes.indexOf(episode) + 1, 2)}/${pad(season.episodes.length, 2)}) - ${episode.name}`);
+      await downloadVideo("http://www.crunchyroll.com" + episode.url, crDl, options)
+    }
+  }
 }
 
 
