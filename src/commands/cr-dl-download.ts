@@ -358,11 +358,11 @@ async function downloadSeries(url: string, crDl: CrDl, options: Options) {
   // notify of restricted seasons
   for (const s of seasonsToDownload) {
     if (s.isRegionBlocked) {
-      console.log(`Notice: Season ${s.name} not available in your region and will be skipped.`);
+      console.log(`Notice: Season "${s.name}" is not available in your region and will be skipped.`);
     } else if (s.isLanguageUnavailable) {
-      console.log(`Notice: Season ${s.name} not available in selected language and will be skipped.`);
+      console.log(`Notice: Season "${s.name}" is not available in selected language and will be skipped.`);
     } else if (s.episodes.length === 0) {
-      console.log(`Notice: Season ${s.name} has no episodes and will be skipped.`);
+      console.log(`Notice: Season "${s.name}" has no episodes and will be skipped.`);
     }
   }
 

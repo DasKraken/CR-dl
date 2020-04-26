@@ -7,6 +7,7 @@ import { Requester, RequesterCdn } from "../types/Requester";
 import { Language } from "../types/language";
 import { VilosVideoInfo } from "./MediaVilosPlayer";
 import { VideoInfo } from "../interfaces/video";
+import { AllHtmlEntities } from "html-entities";
 
 
 
@@ -130,29 +131,31 @@ export class CrDl {
         let seasonNum = -1;
         const page: string = (await this._requester.get(url)).body.toString();
 
-        
-        const regionBlockedSeasons: string[] = Array.from(page.matchAll(/<p class="availability-notes-low">[^<]+: ([^<]+)<\/p>/)).map((v: RegExpMatchArray) => v[1]);
-        const languageBlockedSeasons: string[] = Array.from(page.matchAll(/<p class="availability-notes-low">([^<]+) (?:ist in|no está|is not|n'est pas|non è|недоступен)[^<]+<\/p>/)).map((v: RegExpMatchArray) => v[1]);
 
+        const regionBlockedSeasons: string[] = Array.from(page.matchAll(/<p class="availability-notes-low">[^<]+: ([^<]+)<\/p>/g)).map((v: RegExpMatchArray) => AllHtmlEntities.decode(v[1]));
+        const languageBlockedSeasons: string[] = Array.from(page.matchAll(/<p class="availability-notes-low">([^<]+) (?:ist in|no está|is not|n'est pas|non è|недоступен)[^<]+<\/p>/g)).map((v: RegExpMatchArray) => AllHtmlEntities.decode(v[1]));
+
+        console.log(regionBlockedSeasons)
+        console.log(languageBlockedSeasons)
 
         const regex = /(?:<a href="([^"]+)" title="([^"]+)"\s+class="portrait-element block-link titlefix episode">[^$]*<span class="series-title block ellipsis" dir="auto">\s*\S+ (\S+))|(?:<a href="#"\s+class="season-dropdown content-menu block text-link strong (?:open)? small-margin-bottom"\s+title="([^"]+)">[^<]+<\/a>)/gm;
-        let m;
+        let m: RegExpExecArray | null;
         list[0] = {
             name: "",
             episodes: [],
-            isLanguageUnavailable: false,
-            isRegionBlocked: false
+            isLanguageUnavailable: languageBlockedSeasons.length > 0,
+            isRegionBlocked: regionBlockedSeasons.length > 0
         }
         while ((m = regex.exec(page)) !== null) {
             if (m[4]) {
                 if (seasonNum != -1) list[seasonNum].episodes = list[seasonNum].episodes.reverse();
                 seasonNum++;
-
+                const seasonName = AllHtmlEntities.decode(m[4]);
                 list[seasonNum] = {
-                    name: m[4],
+                    name: seasonName,
                     episodes: [],
-                    isLanguageUnavailable: languageBlockedSeasons.includes(m[4]),
-                    isRegionBlocked: regionBlockedSeasons.includes(m[4])
+                    isLanguageUnavailable: languageBlockedSeasons.includes(seasonName),
+                    isRegionBlocked: regionBlockedSeasons.includes(seasonName)
                 };
             } else {
                 if (seasonNum == -1) seasonNum = 0;
