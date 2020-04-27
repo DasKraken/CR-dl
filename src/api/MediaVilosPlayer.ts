@@ -1,7 +1,6 @@
 import { UserInputError, RuntimeError } from "../Errors";
 import * as langs from 'langs';
-import * as m3u8 from 'm3u8';
-import { Requester, RequesterCdn } from "../types/Requester";
+import { RequesterCdn } from "../types/Requester";
 import { VideoInfo, SubtitleInfo, StreamInfo } from "../interfaces/video";
 import { parseM3U } from "../Utils";
 import { M3U, StreamItem } from "../types/m3u";

@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 import { Command } from "commander";
-import * as read from "read";
 import { loadCookies, getRequester, saveCookies, getRequesterCdn } from "./common";
-import { CrDl, Season, Episode } from "../api/CrDl";
+import { CrDl, Episode } from "../api/CrDl";
 import { UserInputError, RuntimeError } from "../Errors";
 import { languages, Language } from "../types/language";
 import { makeid, pad, toFilename, formatScene } from "../Utils";

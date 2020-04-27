@@ -1,9 +1,7 @@
-import * as mkdirp from 'mkdirp';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as util from "util";
 import * as stream from "stream";
-import { NetworkError } from "../Errors";
 import { RequesterCdn } from '../types/Requester';
 import { ListDownloader } from './ListDownloader';
 const pipeline = util.promisify(stream.pipeline);

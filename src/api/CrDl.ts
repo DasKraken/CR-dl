@@ -2,7 +2,7 @@
 import cloudscraper from "../requester/cloudscraper";
 import * as request from "request";
 import got from "../requester/got";
-import { NetworkError, RuntimeError, UserInputError } from "../Errors";
+import { RuntimeError, UserInputError } from "../Errors";
 import { Requester, RequesterCdn } from "../types/Requester";
 import { Language } from "../types/language";
 import { VilosVideoInfo } from "./MediaVilosPlayer";

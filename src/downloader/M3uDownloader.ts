@@ -1,10 +1,7 @@
 import { RequesterCdn } from "../types/Requester";
 import { DownloadItem } from "../types/download";
 import * as path from "path";
-import {
-    RuntimeError,
-    NetworkError
-} from "../Errors";
+import { RuntimeError } from "../Errors";
 import { parseM3U } from "../Utils";
 import { M3U } from "../types/m3u";
 

@@ -1,12 +1,7 @@
-import {
-    UserInputError,
-    RuntimeError,
-    NetworkError
-} from "../Errors";
+import { RuntimeError } from "../Errors";
 import { EventEmitter } from "events";
 import { LocalSubtitle } from "../types/Subtitle";
 import { spawn } from 'child_process';
-import * as util from 'util';
 import * as readline from 'readline';
 
 

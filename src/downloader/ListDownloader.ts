@@ -1,9 +1,7 @@
 import {
-    UserInputError,
     RuntimeError,
     NetworkError
 } from "../Errors";
-import * as request from "request";
 import * as async from "async";
 import * as fs from "fs";
 import { EventEmitter } from "events";
