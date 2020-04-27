@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc --declaration",
     "watch": "tsc --declaration --watch",
-    "test": "jest"
+    "test": "jest",
+    "eslint": "eslint \"src/**/*.ts\""
   },
   "author": "",
   "license": "MIT",
@@ -41,6 +42,9 @@
     "@types/request": "^2.48.4",
     "@types/string-format": "^2.0.0",
     "@types/tunnel": "0.0.1",
+    "@typescript-eslint/eslint-plugin": "^2.29.0",
+    "@typescript-eslint/parser": "^2.29.0",
+    "eslint": "^6.8.0",
     "jest": "^25.3.0",
     "ts-jest": "^25.4.0",
     "typescript": "^3.8.3"

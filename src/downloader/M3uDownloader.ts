@@ -5,12 +5,9 @@ import { RuntimeError } from "../Errors";
 import { parseM3U } from "../Utils";
 import { M3U } from "../types/m3u";
 
-var m3u8 = require('m3u8');
-//require('m3u8/m3u/AttributeList').dataTypes["frame-rate"] = "decimal-floating-point";
 
-
-function getFilenameFromURI(uri) {
-    return decodeURI(uri.match(/\/([^/?]+)(?:\?.*)?$/)[1])
+function getFilenameFromURI(uri): string {
+    return decodeURI(uri.match(/\/([^/?]+)(?:\?.*)?$/)[1]);
 }
 
 
@@ -33,8 +30,8 @@ export class M3uDownloader {
             this._keyFile = undefined;
 
             if (this._m3u.properties["EXT-X-KEY"]) {
-                const keyURIMatch = this._m3u.properties["EXT-X-KEY"].match(/URI="([^"]+)"/)
-                if (!keyURIMatch) throw new RuntimeError("No key URI found")
+                const keyURIMatch = this._m3u.properties["EXT-X-KEY"].match(/URI="([^"]+)"/);
+                if (!keyURIMatch) throw new RuntimeError("No key URI found");
                 const keyURI = keyURIMatch[1];
 
                 const keyFile = path.join(dataDir, getFilenameFromURI(keyURI));
@@ -43,11 +40,11 @@ export class M3uDownloader {
                 this._keyFile = {
                     url: keyURI,
                     destination: keyFile
-                }
+                };
                 this._m3u.properties["EXT-X-KEY"] = this._m3u.properties["EXT-X-KEY"].replace(keyURI, keyFileRelative);
 
             } else {
-                throw new RuntimeError("No key found. This should never happen")
+                throw new RuntimeError("No key found. This should never happen");
             }
             for (const item of this._m3u.items.PlaylistItem) {
                 const filename: string = getFilenameFromURI(item.properties.uri);
@@ -56,7 +53,7 @@ export class M3uDownloader {
                 this._videoFiles.push({
                     url: uri,
                     destination: path.join(dataDir, filename)
-                })
+                });
             }
         }
     }

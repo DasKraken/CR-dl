@@ -3,7 +3,7 @@ import { Readable } from "stream";
 import { RequesterCdn } from "../types/Requester";
 import * as tunnel from "tunnel";
 import * as util from "util";
-import * as https from 'https';
+import * as https from "https";
 import { UserInputError } from "../Errors";
 import { URL } from "url";
 
@@ -37,7 +37,7 @@ export default function (proxy?: string, retry?: number): RequesterCdn {
 
                     }
                 }) as https.Agent
-            }
+            };
         } else if (proxyURL.protocol == "https:") {
             agent = {
                 http: tunnel.httpOverHttps({
@@ -54,18 +54,18 @@ export default function (proxy?: string, retry?: number): RequesterCdn {
                         proxyAuth: getProxyAuth(proxyURL)
                     }
                 }) as https.Agent
-            }
+            };
         } else {
-            throw new UserInputError("Unsupported proxy protocol: " + util.inspect(proxyURL.protocol))
+            throw new UserInputError("Unsupported proxy protocol: " + util.inspect(proxyURL.protocol));
         }
     }
     return {
         stream: (url: string): Readable => {
             return got.stream(url, { agent, retry });
         },
-        get: (url: string): Promise<{ body: Buffer, url: string }> => {
+        get: (url: string): Promise<{ body: Buffer; url: string }> => {
             return got.get(url, { responseType: "buffer", agent, retry });
         }
-    }
+    };
 
 }

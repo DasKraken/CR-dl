@@ -1,5 +1,5 @@
 import { UserInputError, RuntimeError } from "../Errors";
-import * as langs from 'langs';
+import * as langs from "langs";
 import { RequesterCdn } from "../types/Requester";
 import { VideoInfo, SubtitleInfo, StreamInfo } from "../interfaces/video";
 import { parseM3U } from "../Utils";
@@ -42,10 +42,10 @@ class StreamVilosPlayer implements StreamInfo {
         this._hardsubLang = hardsubLang;
         this._audioLang = audioLang;
     }
-    getHardsubLanguage() {
+    getHardsubLanguage(): Language {
         return this._hardsubLang;
     }
-    getAudioLanguage() {
+    getAudioLanguage(): Language {
         return this._audioLang;
     }
     getWidth(): number {
@@ -69,7 +69,7 @@ interface VilosVideoInfoConfigSubtitle {
 interface VilosVideoInfoConfigStream {
     format: "adaptive_dash" | "adaptive_hls" | "drm_adaptive_dash" | "drm_multitrack_adaptive_hls_v2"
     | "multitrack_adaptive_hls_v2" | "vo_adaptive_dash" | "vo_adaptive_hls" | "vo_drm_adaptive_dash"
-    | "vo_drm_adaptive_hls" | "trailer_hls" | "trailer_dash"
+    | "vo_drm_adaptive_hls" | "trailer_hls" | "trailer_dash";
     audio_lang: Language;
     hardsub_lang: Language;
     url: string;
@@ -83,7 +83,7 @@ interface VilosVideoInfoConfig {
         id: string;
         series_id: string;
         type: string;
-        channel_id: any;
+        channel_id: unknown;
         title: string;
         description: string;
         episode_number: string;
@@ -92,14 +92,14 @@ interface VilosVideoInfoConfig {
         up_next: {
             title: string;
             id: string;
-            channel_id: any;
-            channel_name: any;
+            channel_id: unknown;
+            channel_name: unknown;
             description: string;
             display_episode_number: string;
             duration: number;
             episode_number: string;
             episode_title: string;
-            extra_title: any;
+            extra_title: unknown;
             is_mature: boolean;
             is_premium_only: boolean;
             media_title: string;
@@ -148,7 +148,7 @@ export class VilosVideoInfo implements VideoInfo {
         this._language = JSON.parse(matchLanguage[1]);
 
 
-    };
+    }
     async getSubtitles(): Promise<VilosSubtitleInfo[]> {
         const subtitles: VilosSubtitleInfo[] = [];
         for (let i = 0; i < this._config.subtitles.length; i++) {
@@ -166,7 +166,7 @@ export class VilosVideoInfo implements VideoInfo {
         if (stream.data) return stream.data;
         return (await this._requester.get(stream.url)).body.toString();
     }
-    async _getStreamForHardsubLang(hardSubLang: Language | null) {
+    async _getStreamForHardsubLang(hardSubLang: Language | null): Promise<VilosVideoInfoConfigStream | null> {
         for (const stream of this._config.streams) {
             if (stream.hardsub_lang == hardSubLang && stream.format == "adaptive_hls") {
                 return stream;
@@ -174,7 +174,7 @@ export class VilosVideoInfo implements VideoInfo {
         }
         return null;
     }
-    async getAvailableResolutions(hardSubLang: Language) {
+    async getAvailableResolutions(hardSubLang: Language): Promise<number[]> {
 
 
         const selectedStream = await this._getStreamForHardsubLang(hardSubLang);
@@ -210,7 +210,7 @@ export class VilosVideoInfo implements VideoInfo {
         const streamList: StreamVilosPlayer[] = [];
         for (const streamItem of m3uData.items.StreamItem) {
             if (streamItem.attributes.attributes.resolution?.[1] == resolution) {
-                streamList.push(new StreamVilosPlayer(streamItem, selectedStream.hardsub_lang, selectedStream.audio_lang))
+                streamList.push(new StreamVilosPlayer(streamItem, selectedStream.hardsub_lang, selectedStream.audio_lang));
             }
         }
         return streamList;
@@ -236,6 +236,6 @@ export class VilosVideoInfo implements VideoInfo {
         return this._config.streams.length == 0;
     }
     async isPremiumBlocked(): Promise<boolean> {
-        return this._html.includes('class="showmedia-trailer-notice"');
+        return this._html.includes("class=\"showmedia-trailer-notice\"");
     }
 }

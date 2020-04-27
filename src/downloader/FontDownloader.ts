@@ -1,10 +1,7 @@
-import * as path from 'path';
-import * as fs from 'fs';
-import * as util from "util";
-import * as stream from "stream";
-import { RequesterCdn } from '../types/Requester';
-import { ListDownloader } from './ListDownloader';
-const pipeline = util.promisify(stream.pipeline);
+import * as path from "path";
+import * as fs from "fs";
+import { RequesterCdn } from "../types/Requester";
+import { ListDownloader } from "./ListDownloader";
 
 const fontsRootUrl = "https://static.crunchyroll.com/vilos/assets/fonts/";
 
@@ -73,13 +70,13 @@ const fontFiles = {
 };
 
 const availableFonts = {};
-for (let f in fontFiles) {
-    if (f && fontFiles.hasOwnProperty(f)) {
+for (const f in fontFiles) {
+    if (f && Object.prototype.hasOwnProperty.call(fontFiles, f)) {
         (availableFonts[f.toLowerCase()] = fontsRootUrl + fontFiles[f]);
     }
 }
 
-export async function downloadFontsFromSubtitles(requester: RequesterCdn, retry: number, subtitles: { path: string }[], destination: string) {
+export async function downloadFontsFromSubtitles(requester: RequesterCdn, retry: number, subtitles: { path: string }[], destination: string): Promise<string[]> {
 
     //const dir = path.join(options.tmpDir, "Fonts")
     await fs.promises.mkdir(destination, { recursive: true });
@@ -97,18 +94,18 @@ export async function downloadFontsFromSubtitles(requester: RequesterCdn, retry:
 
         let matches;
         while ((matches = regex1.exec(subContent)) || (matches = regex2.exec(subContent))) {
-            let font: string = matches[1].trim().toLowerCase();
+            const font: string = matches[1].trim().toLowerCase();
             if (!(font in fontsInSub)) {
                 fontsInSub[font] = true;
                 if (font in availableFonts) {
-                    const filePath = path.join(destination, availableFonts[font].split('/').pop());
+                    const filePath = path.join(destination, availableFonts[font].split("/").pop());
                     await ListDownloader.safeDownload(availableFonts[font], filePath, retry, requester);
                     fontsToInclude.push(filePath);
                 } else {
-                    console.log("Unknown font: " + font)
+                    console.log("Unknown font: " + font);
                 }
             }
         }
     }
-    return fontsToInclude
+    return fontsToInclude;
 }

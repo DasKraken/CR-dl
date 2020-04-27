@@ -22,11 +22,11 @@ export interface DownloadUpdateOptions {
 
 }
 export interface ListDownloader {
-    on(name: 'update', listener: (options: DownloadUpdateOptions) => void): this
+    on(name: "update", listener: (options: DownloadUpdateOptions) => void): this;
 }
 
 export class ListDownloader extends EventEmitter {
-    _list: (DownloadItem & { downloadedSize?: number, totalSize?: number })[];
+    _list: (DownloadItem & { downloadedSize?: number; totalSize?: number })[];
     _attempts: number;
     _connections: number;
     _abort: boolean;
@@ -63,7 +63,7 @@ export class ListDownloader extends EventEmitter {
         this._lastUpdateEmit = Date.now();
         this._downloadedSinceCheck = 0;
     }
-    _recalculateDownloaded() {
+    _recalculateDownloaded(): void {
         this._downloadedSize = 0;
         for (const item of this._list) {
             if (item.downloadedSize) {
@@ -71,7 +71,7 @@ export class ListDownloader extends EventEmitter {
             }
         }
     }
-    _estimateSize() {
+    _estimateSize(): void {
         this._estimatedSize = 0;
         let numberKnownSize = 0;
         for (const item of this._list) {
@@ -82,7 +82,7 @@ export class ListDownloader extends EventEmitter {
             }
         }
         if (numberKnownSize > 0) {
-            let averageSize = this._estimatedSize / numberKnownSize;
+            const averageSize = this._estimatedSize / numberKnownSize;
             this._estimatedSize += averageSize * (this._list.length - numberKnownSize);
         } else {
             this._estimatedSize = 1;
@@ -90,7 +90,7 @@ export class ListDownloader extends EventEmitter {
 
 
     }
-    _emitUpdate() {
+    _emitUpdate(): void {
         if (this._abort) return;
         this.emit("update", {
             filesInProgress: this._filesInProgress,
@@ -98,9 +98,9 @@ export class ListDownloader extends EventEmitter {
             downloadedSize: this._downloadedSize,
             estimatedSize: this._estimatedSize,
             speed: this._speed,
-        })
+        });
     }
-    _emitUpdateLimit() {
+    _emitUpdateLimit(): void {
         if (this._abort) return;
         const timeDiff = Date.now() - this._lastUpdateEmit;
         if (timeDiff < 100) return; // update every 0.1 seconds
@@ -111,11 +111,11 @@ export class ListDownloader extends EventEmitter {
             downloadedSize: this._downloadedSize,
             estimatedSize: this._estimatedSize,
             speed: this._speed,
-        })
+        });
     }
-    _updateSpeed(amount) {
+    _updateSpeed(amount): void {
         this._downloadedSinceCheck += amount;
-        let timeDiff = Date.now() - this._lastSpeedCheck;
+        const timeDiff = Date.now() - this._lastSpeedCheck;
         if (timeDiff >= 1000) {
             this._speed = this._downloadedSinceCheck / (timeDiff / 1000);
             this._downloadedSinceCheck = 0;
@@ -123,40 +123,40 @@ export class ListDownloader extends EventEmitter {
         }
 
     }
-    async _downloadFile(index: number) {
+    async _downloadFile(index: number): Promise<void> {
         this._filesInProgress++;
 
         const file = this._list[index];
         for (let attempt = 0; attempt < this._attempts; attempt++) {
             try {
                 file.downloadedSize = 0;
-                let status: number = -1;
+                let status = -1;
                 let contentEncoding: string | undefined = "unset";
                 const stream = this._requester.stream(file.url);
                 stream.on("response", (response: Response) => {
                     status = response.statusCode;
-                    file.totalSize = parseInt(response.headers['content-length'] ?? "-2");
-                    contentEncoding = response.headers['content-encoding'];
+                    file.totalSize = parseInt(response.headers["content-length"] ?? "-2");
+                    contentEncoding = response.headers["content-encoding"];
                     this._estimateSize();
                     this._emitUpdate();
-                })
+                });
                 stream.on("data", (chunk) => {
                     file.downloadedSize += chunk.length;
                     this._downloadedSize += chunk.length;
-                    this._updateSpeed(chunk.length)
+                    this._updateSpeed(chunk.length);
                     this._emitUpdateLimit();
                 });
                 await pipeline(
                     stream,
                     fs.createWriteStream(file.destination)
-                )
+                );
 
                 if (status !== 200) {
                     throw new NetworkError("Status code: " + status);
                 }
 
                 // check if file size it equal to transmitted size
-                let s = (await fs.promises.stat(file.destination)).size
+                const s = (await fs.promises.stat(file.destination)).size;
                 if (s !== file.downloadedSize) {
                     console.log(s + " !== " + file.downloadedSize);
                     throw new NetworkError("Transmission incomplete. (Downloaded Size).");
@@ -219,21 +219,21 @@ export class ListDownloader extends EventEmitter {
         }
         throw new RuntimeError("Too many attempts. (This code should't be reachable)");
     }
-    startDownload() {
+    startDownload(): Promise<void> {
         this._lastSpeedCheck = Date.now();
         this._lastUpdateEmit = Date.now();
         this._downloadedSinceCheck = 0;
         return new Promise((resolve, reject) => {
             async.forEachOfLimit(this._list, 5, (value, key: number, callback) => {
-                this._downloadFile(key).then(() => { callback() }, callback)
+                this._downloadFile(key).then(() => { callback(); }, callback);
             }, err => {
                 if (err) {
                     this._abort = true;
-                    this.emit("error", err)
+                    this.emit("error", err);
                     reject(err);
                     return;
                 }
-                this.emit("finish")
+                this.emit("finish");
                 resolve();
             });
         });
@@ -241,32 +241,32 @@ export class ListDownloader extends EventEmitter {
     static async safeDownload(url: string, destination: string, maxAttempts: number, requester: RequesterCdn): Promise<void> {
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
             try {
-                let status: number = -1;
+                let status = -1;
 
-                let contentLength: number = -1;
+                let contentLength = -1;
                 let contentEncoding: string | undefined = "unset";
                 let downloadedSize = 0;
 
-                const stream = requester.stream(url)
+                const stream = requester.stream(url);
                 stream.on("response", (response: Response) => {
                     status = response.statusCode;
-                    contentLength = parseInt(response.headers['content-length'] ?? "-2");
-                    contentEncoding = response.headers['content-encoding'];
-                })
+                    contentLength = parseInt(response.headers["content-length"] ?? "-2");
+                    contentEncoding = response.headers["content-encoding"];
+                });
                 stream.on("data", (chunk) => {
                     downloadedSize += chunk.length;
                 });
                 await pipeline(
                     stream,
                     fs.createWriteStream(destination)
-                )
+                );
 
                 if (status !== 200) {
                     throw new NetworkError("Status code: " + status);
                 }
 
                 // check if file size it equal to transmitted size
-                let s = (await fs.promises.stat(destination)).size
+                const s = (await fs.promises.stat(destination)).size;
                 if (s !== downloadedSize) {
                     console.log(s + " !== " + downloadedSize);
                     throw new NetworkError("Transmission incomplete. (Downloaded Size).");

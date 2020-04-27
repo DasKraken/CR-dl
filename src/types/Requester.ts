@@ -8,12 +8,12 @@ export interface Requester {
     post: (url: string, formdata?: Record<string, string>) => Promise<{}>;
 }
 
-export interface onResponse {
-    on(name: 'response', listener: (response: Response) => void): void
+export interface OnResponse {
+    on(name: "response", listener: (response: Response) => void): void;
 }
 
 export interface RequesterCdn {
-    stream: (url: string) => Readable & onResponse;
+    stream: (url: string) => Readable & OnResponse;
     get: (url: string) => Promise<{
         body: Buffer;
         url: string;
