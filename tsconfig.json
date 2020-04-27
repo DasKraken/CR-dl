@@ -5,7 +5,10 @@
     "outDir": "lib",
     "sourceMap": true,
     "strictNullChecks": true,
-    "declaration": true
+    "declaration": true,
+    "lib": [
+      "es2020"
+    ]
   },
   "include": [
     "src/**/*.ts"

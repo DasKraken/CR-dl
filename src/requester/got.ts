@@ -5,6 +5,7 @@ import * as tunnel from "tunnel";
 import * as util from "util";
 import * as https from 'https';
 import { UserInputError } from "../Errors";
+import { URL } from "url";
 
 function getProxyAuth(proxyURL: URL): string | undefined {
     if (proxyURL.username.length > 0) {

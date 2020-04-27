@@ -36,6 +36,7 @@
     "@types/async": "^3.2.0",
     "@types/cli-progress": "^3.4.2",
     "@types/jest": "^25.2.1",
+    "@types/node": "^13.13.4",
     "@types/read": "0.0.28",
     "@types/request": "^2.48.4",
     "@types/string-format": "^2.0.0",
