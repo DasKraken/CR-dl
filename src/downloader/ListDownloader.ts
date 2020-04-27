@@ -113,7 +113,7 @@ export class ListDownloader extends EventEmitter {
             speed: this._speed,
         });
     }
-    _updateSpeed(amount): void {
+    _updateSpeed(amount: number): void {
         this._downloadedSinceCheck += amount;
         const timeDiff = Date.now() - this._lastSpeedCheck;
         if (timeDiff >= 1000) {
@@ -224,8 +224,8 @@ export class ListDownloader extends EventEmitter {
         this._lastUpdateEmit = Date.now();
         this._downloadedSinceCheck = 0;
         return new Promise((resolve, reject) => {
-            async.forEachOfLimit(this._list, 5, (value, key: number, callback) => {
-                this._downloadFile(key).then(() => { callback(); }, callback);
+            async.forEachOfLimit(this._list, 5, (value, key: number | string, callback) => {
+                this._downloadFile(key as number).then(() => { callback(); }, callback);
             }, err => {
                 if (err) {
                     this._abort = true;

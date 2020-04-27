@@ -3,7 +3,7 @@ import * as langs from "langs";
 import { RequesterCdn } from "../types/Requester";
 import { VideoInfo, SubtitleInfo, StreamInfo } from "../interfaces/video";
 import { parseM3U } from "../Utils";
-import { M3U, StreamItem } from "../types/m3u";
+import { M3U, StreamItem } from "m3u8";
 import { Language } from "../types/language";
 
 

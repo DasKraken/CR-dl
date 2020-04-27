@@ -3,8 +3,8 @@ import { Language } from "../types/language";
 export interface VideoInfo {
     getSubtitles(): Promise<SubtitleInfo[]>;
     getDefaultLanguage(): Promise<Language>;
-    getAvailableResolutions(hardSubLang: Language | null);
-    getStreams(resolution, hardSubLang: Language | null): Promise<StreamInfo[]>;
+    getAvailableResolutions(hardSubLang: Language | null): Promise<number[]>;
+    getStreams(resolution: number, hardSubLang: Language | null): Promise<StreamInfo[]>;
     getEpisodeTitle(): Promise<string>;
     getSeriesTitle(): Promise<string>;
     getSeasonTitle(): Promise<string>;

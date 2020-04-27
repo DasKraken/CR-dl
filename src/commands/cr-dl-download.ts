@@ -16,7 +16,7 @@ import { M3uDownloader } from "../downloader/M3uDownloader";
 import { ListDownloader, DownloadUpdateOptions } from "../downloader/ListDownloader";
 import { VideoMuxer } from "../downloader/VideoMuxer";
 import * as cliProgress from "cli-progress";
-import * as prettyBytes from "pretty-bytes";
+import prettyBytes from "pretty-bytes";
 const format = format_.create({
     scene: formatScene
 });
@@ -211,7 +211,7 @@ async function downloadVideo(url: string, crDl: CrDl, options: Options): Promise
     }
 
 
-    const metadata = {
+    const metadata: Record<string, string> = {
         episodeTitle: await media.getEpisodeTitle(),
         seriesTitle: await media.getSeriesTitle(),
         episodeNumber: await media.getEpisodeNumber(),
@@ -223,7 +223,7 @@ async function downloadVideo(url: string, crDl: CrDl, options: Options): Promise
         metadata.episodeNumber = pad(metadata.episodeNumber, 2);
     }
 
-    const formatData = {};
+    const formatData: Record<string, string> = {};
     for (const prop in metadata) {
         formatData[prop] = toFilename(metadata[prop]);
     }

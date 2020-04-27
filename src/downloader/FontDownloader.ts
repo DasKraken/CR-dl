@@ -6,7 +6,7 @@ import { ListDownloader } from "./ListDownloader";
 const fontsRootUrl = "https://static.crunchyroll.com/vilos/assets/fonts/";
 
 // List at view-source:https://static.crunchyroll.com/vilos/player.html
-const fontFiles = {
+const fontFiles: Record<string, string> = {
     "Adobe Arabic": "AdobeArabic-Bold.otf",
     "Andale Mono": "andalemo.ttf",
     "Arial": "arial.ttf",
@@ -69,7 +69,7 @@ const fontFiles = {
     "Webdings": "webdings.ttf"
 };
 
-const availableFonts = {};
+const availableFonts: Record<string, string> = {};
 for (const f in fontFiles) {
     if (f && Object.prototype.hasOwnProperty.call(fontFiles, f)) {
         (availableFonts[f.toLowerCase()] = fontsRootUrl + fontFiles[f]);
@@ -98,7 +98,7 @@ export async function downloadFontsFromSubtitles(requester: RequesterCdn, retry:
             if (!(font in fontsInSub)) {
                 fontsInSub[font] = true;
                 if (font in availableFonts) {
-                    const filePath = path.join(destination, availableFonts[font].split("/").pop());
+                    const filePath = path.join(destination, availableFonts[font].split("/").pop() as string);
                     await ListDownloader.safeDownload(availableFonts[font], filePath, retry, requester);
                     fontsToInclude.push(filePath);
                 } else {

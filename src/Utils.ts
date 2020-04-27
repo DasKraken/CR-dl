@@ -1,7 +1,6 @@
 import * as fs from "fs";
-import { M3U } from "./types/m3u";
 const removeDiacritics = require("diacritics").remove;
-import * as m3u8 from "m3u8";
+import m3u8, { M3U } from "m3u8";
 
 
 export function pad(num: string | number, size: number): string {

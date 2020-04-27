@@ -1,5 +1,5 @@
-import * as cloudscraper from "cloudscraper";
-import * as request from "request";
+import cloudscraper from "cloudscraper";
+import request from "request";
 import { Requester } from "../types/Requester";
 
 export default function (jar: request.CookieJar, proxy?: string): Requester {

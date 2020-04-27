@@ -3,11 +3,13 @@ import { DownloadItem } from "../types/download";
 import * as path from "path";
 import { RuntimeError } from "../Errors";
 import { parseM3U } from "../Utils";
-import { M3U } from "../types/m3u";
+import { M3U } from "m3u8";
 
 
-function getFilenameFromURI(uri): string {
-    return decodeURI(uri.match(/\/([^/?]+)(?:\?.*)?$/)[1]);
+function getFilenameFromURI(uri: string): string {
+    const m = uri.match(/\/([^/?]+)(?:\?.*)?$/);
+    if (!m) throw new Error("No filename found");
+    return decodeURI(m[1]);
 }
 
 
@@ -16,11 +18,9 @@ export class M3uDownloader {
     _keyFile?: DownloadItem;
     _m3u?: M3U;
 
-    _requester: RequesterCdn
     // {destination}/file.m3u8 - {destination}/{subFolder}/video.ts
     async load(url: string, destination: string, subFolder: string, requester: RequesterCdn): Promise<void> {
-        this._requester = requester;
-        const m3u = (await this._requester.get(url)).body.toString();
+        const m3u = (await requester.get(url)).body.toString();
         this._m3u = await parseM3U(m3u);
         if (this._m3u.items.StreamItem.length > 0) { // Stream List
             return await this.load(this._m3u.items.StreamItem[0].properties.uri ?? "", destination, subFolder, requester);
@@ -47,7 +47,7 @@ export class M3uDownloader {
                 throw new RuntimeError("No key found. This should never happen");
             }
             for (const item of this._m3u.items.PlaylistItem) {
-                const filename: string = getFilenameFromURI(item.properties.uri);
+                const filename: string = getFilenameFromURI(item.properties.uri as string);
                 const uri: string = item.properties.uri ?? "";
                 item.properties.uri = path.join(subFolder, filename).replace(/\\/g, "/");
                 this._videoFiles.push({

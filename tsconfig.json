@@ -4,8 +4,9 @@
     "module": "commonjs",
     "outDir": "lib",
     "sourceMap": true,
-    "strictNullChecks": true,
+    "strict": true,
     "declaration": true,
+    "esModuleInterop": true,
     "lib": [
       "es2020"
     ]

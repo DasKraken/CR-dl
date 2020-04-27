@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { Command } from "commander";
-import * as read from "read";
+import read from "read";
 import { loadCookies, getRequester, saveCookies } from "./common";
 import { CrDl } from "../api/CrDl";
 import { UserInputError } from "../Errors";
@@ -48,5 +48,3 @@ login
         }
         saveCookies();
     });
-
-

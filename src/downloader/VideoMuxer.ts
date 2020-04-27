@@ -30,7 +30,6 @@ function parseProgressLine(line: string): Record<string, string> | null {
 
 export interface VideoMuxerOptions {
     input: string;
-    metadata?;
     subtitles: LocalSubtitle[];
     fonts: string[];
     output: string;
