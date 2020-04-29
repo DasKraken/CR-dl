@@ -1,4 +1,5 @@
-import { CrDl } from "../src/CrDlNew"
+import { CrDl } from "../src/api/CrDl"
+import { Language } from "../src/types/language";
 
 test("CrDl login/logout", async () => {
     jest.setTimeout(100000);
@@ -15,7 +16,7 @@ test("CrDl login/logout", async () => {
 test("CrDl setLang/getLang", async () => {
     jest.setTimeout(100000);
     const crdl = new CrDl();
-    const languages = ["enUS", "enGB", "esLA", "esES", "ptBR", "ptPT", "frFR", "deDE", "arME", "itIT", "ruRU"];
+    const languages: Language[] = ["enUS", "enGB", "esLA", "esES", "ptBR", "ptPT", "frFR", "deDE", "arME", "itIT", "ruRU"];
 
     expect(typeof (await crdl.getLang())).toBe("string");
 
