@@ -10,7 +10,7 @@ Windows Nutzer können von der [Releases Seite](https://github.com/DasKraken/CR-
 
 ### Falls das Bundle nicht verwendet wird:
 
-CR-dl erfordert, dass [node.js (v10 oder höher)](https://nodejs.org) und [ffmpeg](https://www.ffmpeg.org) auf dem System installiert sind und über PATH erreichbar sind.
+CR-dl erfordert, dass [node.js (v12 oder höher)](https://nodejs.org) und [ffmpeg](https://www.ffmpeg.org) auf dem System installiert sind und über PATH erreichbar sind.
 
 Nachdem sie installiert sind, führt aus:
 
@@ -28,9 +28,9 @@ Bei Windows könnt ihr eine Konsole öffnen indem ihr im Projektverzeichnis (wo 
 
 Folgende Befehle können verwendet werden:
 
-Sich in Crunchyroll einloggen um auf Premiumcontent zuzugreifen (Dies erstellt die Datei 'cookies.data' , die die Sitzung speichert):
+Sich in Crunchyroll einloggen um auf Premiumcontent zuzugreifen (Dies erstellt die Datei 'cookies.data' , die die Sitzung speichert). Falls Benutzername und/oder Password nicht angegeben wird, wird eine Eingabe aufgefordert:
 ```
-cr-dl login <username> <password>
+cr-dl login [username] [password]
 ```
 
 
@@ -44,63 +44,62 @@ Anmerkung 1: Dies ändert nicht die Untertitelsprache
 Anmerkung 2: Videos die nicht in der gewählten Sprache verfügbar sind werden evtl. nicht heruntergeladen.
 Erlaubt sind: enUS, enGB, esLA, esES, ptBR, ptPT, frFR, deDE, arME, itIT, ruRU
 ```
-cr-dl language LANG
+cr-dl language <LANG>
 ```
 
 
-Ein Video oder eine Serie von einer URL herunterladen. Optional kann eine Auflösung angegeben werden (360p, 480p, 720p, 1080p):
+Ein Video oder eine Serie von einer URL herunterladen:
 ```
-cr-dl download <URL> [auflösung]
+cr-dl download <URL>
 ```
 
 
 ### Optionale Argumente:
 Folgende optionale Argumente können mit 'download' verwendet werden:
+```-f <resolution>, --format <resolution>```
+Video Auflösung (Standard: "1080p")
 
-```--season SEASON, --seasons SEASONS```
-Eine Staffelnummer oder eine kommagetrennte Liste (ohne Leerzeichen) von Staffelnummern zum Herunterladen. Ein ```-``` (Minus) kann verwendet werden um einen Interval anzugeben (z.B.: ```1,3-5```). Funktioniert nur mit Serien-URLs. Anmerkung: Staffel 1 ist die unterste Staffel auf der Webseite.
+```--season <SEASON>```
+Eine Staffelnummer oder eine kommagetrennte Liste (ohne Leerzeichen) von Staffelnummern zum Herunterladen. Ein ```-``` (Minus) kann verwendet werden um einen Bereich anzugeben (z.B.: ```1,3-5```). Funktioniert nur mit Serien-URLs. Anmerkung: Staffel 1 ist die unterste Staffel auf der Webseite.
 
-```--episode EPISODE, --episodes EPISODES```
-Eine kommagetrennte Liste (ohne Leerzeichen) von Episodennummern zum Herunterladen. Ein ```-``` (Minus) kann verwendet werden um einen Interval anzugeben (z.B.: ```01,03-05,SP2```). Funktioniert nur mit Serien-URLs. Falls eine angegebene Episodennummer in mehreren Staffeln verfügbar ist, muss eine Staffel mit --season ausgewählt werden.
+```--episode <EPISODE>```
+Eine kommagetrennte Liste (ohne Leerzeichen) von Episodennummern zum Herunterladen. Ein ```-``` (Minus) kann verwendet werden um einen Bereich anzugeben (z.B.: ```01,03-05,SP2```). Funktioniert nur mit Serien-URLs. Falls eine angegebene Episodennummer in mehreren Staffeln verfügbar ist, muss eine Staffel mit --season ausgewählt werden.
  
 ```-c N, --connections N```
-Anzahl der gleichzeitigen Verbindungen (default: 5)
+Anzahl der gleichzeitigen Verbindungen (Standard: 5)
 
-```--subLangs LANGS```
+```--sub-lang <LANGS>```
 Eine kommagetrennte Liste (ohne Leerzeichen) an Sprachen die in das Video eingebettet werden sollen. (z.B.: deDE,enUS). Setze auf ```none``` um keine Untertitel einzubetten.
 
-```-l LANG, --subDefault LANG```
+```--default-sub <LANG>```
 Sprache, dessen Untertitel als Standard ausgewählt werden sollen. (z.B: enUS). Standard ist, falls angegeben, der erste Eintrag von --subLangs, ansonsten CR-Standard.
 
-```--attachFonts```
+```--attach-fonts```
 Lädt automatisch die von den Untertiteln benötigten Schriftarten herunter und hängt sie an die Videodatei an.
 
-```--listSubs```
-Video nicht herunterladen. Zeigt nur Liste an verfügbaren Sprachen an.
+```--list-subs```
+Video nicht herunterladen. Zeigt nur Liste an verfügbaren Untertitelsprachen an.
 
-```--subsOnly```
+```--subs-only```
 Lade nur Untertitel herunter. Kein Video.
 
 ```--hardsub```
-Lade einen Hardsub Videostream runter. Nur eine Untertitelsprache wird eingebettet, die mit --subDefault spezifiziert werden kann.
+Lade einen Hardsub Videostream runter. Nur eine Untertitelsprache wird eingebettet, die mit --default-sub spezifiziert werden kann.
 
-```--maxAttempts N```
+```--retry <N>```
 Anzahl Wiederholungsversuche bei Netzwerkproblemen. (Standard: 5)
 
-```--hideProgressBar```
+```--no-progress-bar```
 Keinen Fortschrittsbalken anzeigen.
 
-```--legacyPlayer```
-Lade Untertitel mit der alten Methode die vom Flash Player verwendet wurde. (Aus irgendeinem Grund nutzen sie unterschiedliche Schriftarten bei älteren Videos).
-
-```--httpProxy PROXY```
+```--proxy <url>```
 HTTP proxy für Zugriff auf Crunchyroll. Dies ist ausreichend um Länderrestriktionen zu umgehen.
 
-```--httpProxyCdn PROXY```
-HTTP proxy für Download der Videodateien.
+```--proxy-cdn <url>```
+HTTP proxy für Download der Videodateien. Nicht nötig um Länderrestriktionen zu umgehen.
 
 
-```-o OUTPUT, --output OUTPUT```
+```-o <OUTPUT>, --output <OUTPUT>```
 Vorlage zur Ordner- und Dateibenennung. Siehe unten für mehr Informationen
 
 ### Ausgabevorlage
@@ -135,9 +134,10 @@ Benenne es wie ein Fansub:
 
 ## Beispiele
 
-Einloggen als User "MyName" mit Passwort "Pass123":
+Einloggen als User "MyName" mit in Aufforderung eingegebenen Password:
 ```
-cr-dl login "MyName" "Pass123"
+> cr-dl login "MyName"
+Enter password:
 ```
 
 
@@ -149,7 +149,7 @@ cr-dl download http://www.crunchyroll.com/hinamatsuri/episode-4-disownment-rock-
 
 Lädt alle Episoden von HINAMATSURI in 720p mit 10 gleichzeitigen Verbindungen, und setzt die Standard-Untertitelsprache auf enUS:
 ```
-cr-dl download -c 10 -l enUS http://www.crunchyroll.com/hinamatsuri 720p
+cr-dl download -c 10 -default-sub enUS http://www.crunchyroll.com/hinamatsuri -f 720p
 ```
 
 
@@ -161,25 +161,25 @@ cr-dl download http://www.crunchyroll.com/food-wars-shokugeki-no-soma --season 2
 
 Lädt Bungo Stray Dogs 1 and 2:
 ```
-cr-dl download http://www.crunchyroll.com/bungo-stray-dogs --seasons 6,7
+cr-dl download http://www.crunchyroll.com/bungo-stray-dogs --season 6,7
 ```
 
 
 Lädt die Episoden 1,3,4,5 und Spezial 2 von DITF (SP2 nicht mehr verfügbar):
 ```
-cr-dl download http://www.crunchyroll.com/darling-in-the-franxx --episodes 1,3-5,SP2
+cr-dl download http://www.crunchyroll.com/darling-in-the-franxx --episode 1,3-5,SP2
 ```
 
 
 Lädt Video mit deutschen und englischen Untertiteln herunter und setzt deutsch als Standard:
 ```
-cr-dl download --subLangs deDE,enUS URL
+cr-dl download --sub-lang deDE,enUS <URL>
 ```
 
 
 Lädt Video(s) und bennent es wie ein Scene-Release:
 ```
-cr-dl download -o "{seasonTitle!scene}.{resolution}.WEB.x264-byME/{seasonTitle!scene}.E{episodeNumber}.{resolution}.WEB.x264-byME.mkv" URL
+cr-dl download -o "{seasonTitle!scene}.{resolution}.WEB.x264-byME/{seasonTitle!scene}.E{episodeNumber}.{resolution}.WEB.x264-byME.mkv" <URL>
 ```
 
 

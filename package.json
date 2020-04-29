@@ -15,7 +15,7 @@
     "cr-dl": "./lib/commands/cr-dl.js"
   },
   "engines": {
-    "node": ">=10.1.0"
+    "node": ">=12.0.0"
   },
   "dependencies": {
     "async": "^3.2.0",
