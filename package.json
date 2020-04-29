@@ -2,14 +2,31 @@
   "name": "cr-dl",
   "version": "3.3.1",
   "description": "",
-  "main": "src/CrDl.js",
+  "main": "lib/api/CrDl.js",
+  "types": "lib/api/CrDl.d.ts",
+  "keywords": [
+    "crunchyroll",
+    "anime",
+    "anime-downloader",
+    "crunchyroll-downloader",
+    "weeb",
+    "download",
+    "downloader"
+  ],
+  "files": [
+    "lib"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DasKraken/CR-dl.git"
+  },
   "scripts": {
     "build": "tsc --declaration",
     "watch": "tsc --declaration --watch",
     "test": "jest",
     "eslint": "eslint \"src/**/*.ts\""
   },
-  "author": "",
+  "author": "DasKraken",
   "license": "Unlicense",
   "bin": {
     "cr-dl": "./lib/commands/cr-dl.js"
