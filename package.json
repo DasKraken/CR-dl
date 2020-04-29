@@ -10,7 +10,7 @@
     "eslint": "eslint \"src/**/*.ts\""
   },
   "author": "",
-  "license": "MIT",
+  "license": "Unlicense",
   "bin": {
     "cr-dl": "./lib/commands/cr-dl.js"
   },
