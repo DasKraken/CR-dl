@@ -135,6 +135,7 @@ download
 
 
 async function downloadVideo(url: string, crDl: CrDl, options: Options): Promise<void> {
+    options = Object.assign({}, options);
     const tmpDir = "tmp_" + makeid(6) + "/";
 
     const media = await crDl.loadEpisode(url);
