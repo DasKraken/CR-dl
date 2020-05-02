@@ -250,6 +250,12 @@ async function downloadVideo(url: string, crDl: CrDl, options: Options): Promise
 
     console.log(`Downloading to "${outputPath}"...`);
 
+    try {
+        await fs.promises.access(outputPath, fs.constants.F_OK)
+        console.log("File already exists. Skipping...");
+        return;
+    } catch (e) { }
+
     const outputDirectory = outputPath.substring(0, outputPath.lastIndexOf("/"));
     if (outputDirectory.length > 0) {
         await fs.promises.mkdir(outputDirectory, { recursive: true });
