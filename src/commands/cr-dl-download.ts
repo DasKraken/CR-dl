@@ -4,7 +4,7 @@ import { loadCookies, getRequester, saveCookies, getRequesterCdn } from "./commo
 import { CrDl, Episode } from "../api/CrDl";
 import { UserInputError, RuntimeError } from "../Errors";
 import { languages, Language } from "../types/language";
-import { makeid, pad, toFilename, formatScene } from "../Utils";
+import { makeid, pad, toFilename, formatScene, deleteFolderRecursive } from "../Utils";
 import * as util from "util";
 import * as fs from "fs";
 import * as path from "path";
@@ -141,219 +141,227 @@ async function downloadVideo(url: string, crDl: CrDl, options: Options): Promise
     options = Object.assign({}, options);
     const tmpDir = "tmp_" + makeid(6) + "/";
 
-    const media = await crDl.loadEpisode(url);
+    try {
 
-    if (await media.isPremiumBlocked()) {
-        throw new UserInputError("Error: Episode requires a premium account.");
-    }
-    if (await media.isRegionBlocked()) {
-        throw new UserInputError("Error: Episode seems to be blocked in your region. In some cases it's still watchable with a premium account.");
-    }
 
-    const subtitles = await media.getSubtitles();
 
-    if (options.listSubs) {
-        // List subs. Do not download.
-        const subsTable: { title: string; langCode: string; isDefault: boolean }[] = [];
-        for (const sub of subtitles) {
-            subsTable.push({ title: await sub.getTitle(), langCode: await sub.getLanguage(), isDefault: await sub.isDefault() });
+        const media = await crDl.loadEpisode(url);
+
+        if (await media.isPremiumBlocked()) {
+            throw new UserInputError("Error: Episode requires a premium account.");
         }
-        console.table(subsTable);
-        return;
-    }
-
-    // Ensure options
-    if (!options.defaultSub) {
-        if (options.subLang && options.subLang.length > 0) {
-            options.defaultSub = options.subLang[0];
-        } else if (subtitles.length == 0) {
-            options.defaultSub = "none";
-        } else {
-            options.defaultSub = await media.getDefaultLanguage();
+        if (await media.isRegionBlocked()) {
+            throw new UserInputError("Error: Episode seems to be blocked in your region. In some cases it's still watchable with a premium account.");
         }
-    }
-    if (!options.subLang) {
-        if (options.hardsub) {
-            options.subLang = [options.defaultSub];
-        } else {
-            options.subLang = [];
+
+        const subtitles = await media.getSubtitles();
+
+        if (options.listSubs) {
+            // List subs. Do not download.
+            const subsTable: { title: string; langCode: string; isDefault: boolean }[] = [];
             for (const sub of subtitles) {
-                options.subLang.push(await sub.getLanguage());
+                subsTable.push({ title: await sub.getTitle(), langCode: await sub.getLanguage(), isDefault: await sub.isDefault() });
+            }
+            console.table(subsTable);
+            return;
+        }
+
+        // Ensure options
+        if (!options.defaultSub) {
+            if (options.subLang && options.subLang.length > 0) {
+                options.defaultSub = options.subLang[0];
+            } else if (subtitles.length == 0) {
+                options.defaultSub = "none";
+            } else {
+                options.defaultSub = await media.getDefaultLanguage();
             }
         }
-
-    }
-
-    // select and download Subs
-    let hardsubLang: Language | null = null;
-    let subsToInclude: SubToInclude[];
-    if (options.hardsub && options.defaultSub !== "none") {
-        if (options.subLang.length > 1) throw new UserInputError("Cannot embed multiple subtitles with --hardsub");
-        hardsubLang = options.defaultSub;
-        subsToInclude = [];
-
-        console.log(`Selected "${hardsubLang}" as hardsub language.`);
-    } else {
-        hardsubLang = null;
-        subsToInclude = await downloadSubs(subtitles, path.join(tmpDir, "SubData"), options.subLang, options.defaultSub);
-
-    }
-    if (subsToInclude.length > 0) {
-        console.log("Following subtitles will be included: ");
-        console.table(subsToInclude, ["title", "langCode", "default"]);
-    } else {
-        console.log("No subtitles will be included.");
-    }
-
-    // download fonts
-    let fontsToInclude: string[] = [];
-    if (options.attachFonts) {
-        fontsToInclude = await downloadFontsFromSubtitles(requesterCdn, options.retry, subsToInclude, path.join(tmpDir, "Fonts"));
-    }
-
-    //console.log(fontsToInclude);
-
-    let selectedStream: StreamInfo | undefined = undefined;
-    if (!options.subsOnly) {
-        const resolution = getMaxWantedResolution(await media.getAvailableResolutions(hardsubLang), options.format);
-
-        // We may get multiple streams on different servers. Just take first.
-        selectedStream = (await media.getStreams(resolution, hardsubLang))[0];
-    }
-
-
-    const metadata: Record<string, string> = {
-        episodeTitle: await media.getEpisodeTitle(),
-        seriesTitle: await media.getSeriesTitle(),
-        episodeNumber: await media.getEpisodeNumber(),
-        seasonTitle: await media.getSeasonTitle(),
-        resolution: options.subsOnly ? "subtitles" : selectedStream?.getHeight() + "p",
-    };
-
-    if (!isNaN(parseInt(metadata.episodeNumber))) {
-        metadata.episodeNumber = pad(metadata.episodeNumber, 2);
-    }
-
-    const formatData: Record<string, string> = {};
-    for (const prop in metadata) {
-        formatData[prop] = toFilename(metadata[prop]);
-    }
-
-    if (!options.output) {
-        if (options.subsOnly) {
-            options.output = "{seasonTitle} [subtitles]/{seasonTitle} - {episodeNumber} - {episodeTitle}.ass";
-        } else {
-            options.output = "{seasonTitle} [{resolution}]/{seasonTitle} - {episodeNumber} - {episodeTitle} [{resolution}].mkv";
-        }
-    }
-    const outputPath = format(options.output, formatData);
-
-    console.log(`Downloading to "${outputPath}"...`);
-
-    try {
-        await fs.promises.access(outputPath, fs.constants.F_OK)
-        console.log("File already exists. Skipping...");
-        return;
-    } catch (e) { }
-
-    const outputDirectory = outputPath.substring(0, outputPath.lastIndexOf("/"));
-    if (outputDirectory.length > 0) {
-        await fs.promises.mkdir(outputDirectory, { recursive: true });
-    }
-    if (options.subsOnly) {
-        await downloadSubsOnly(subsToInclude, outputPath);
-    } else {
-        //const m3u8File = await downloadVideoFromM3U(selectedStream.getUrl(), "VodVid", options)
-        if (!selectedStream) throw new RuntimeError("No stream selcted. Should never happen.");
-        await fs.promises.mkdir(path.join(tmpDir, "VodVid"), { recursive: true });
-
-        // === M3u8 File ===
-        const m3u8File = new M3uDownloader();
-        const m3u8FilePath = path.join(tmpDir, "VodVid.m3u8");
-        await m3u8File.load(selectedStream.getUrl(), tmpDir, "VodVid", requesterCdn);
-        await fs.promises.writeFile(m3u8FilePath, m3u8File.getModifiedM3u());
-
-        // === Key File ===
-        const keyFile = m3u8File.getKeyFile();
-        if (keyFile) {
-
-            await ListDownloader.safeDownload(keyFile.url, keyFile.destination, 5, requesterCdn);
-        }
-
-        // === Video Files Download ===
-        const listDownloader = new ListDownloader(m3u8File.getVideoFiles(), options.retry, options.connections, requesterCdn);
-        if (options.progressBar) {
-            const bar1 = new cliProgress.Bar({
-                format: "downloading [{bar}] {percentage}% | {downSize}/{estSize} | Speed: {speed}/s | ETA: {myEta}s"
-            }, cliProgress.Presets.shades_classic);
-            bar1.start(1, 0);
-            listDownloader.on("update", (data: DownloadUpdateOptions) => {
-                bar1.setTotal(data.estimatedSize);
-                bar1.update(data.downloadedSize, {
-                    downSize: prettyBytes(data.downloadedSize),
-                    estSize: prettyBytes(data.estimatedSize),
-                    speed: prettyBytes(data.speed),
-                    myEta: Math.floor((data.estimatedSize - data.downloadedSize) / data.speed)
-                });
-            });
-            await listDownloader.startDownload();
-            bar1.stop();
-        } else {
-            let lastPrint = Date.now();
-            listDownloader.on("update", (data: DownloadUpdateOptions) => {
-                const now = Date.now();
-                if (now < lastPrint + 1000) return; // Once per second
-                lastPrint += 1000;
-                const s = {
-                    percentage: Math.floor(data.downloadedSize / data.estimatedSize * 100),
-                    downSize: prettyBytes(data.downloadedSize),
-                    estSize: prettyBytes(data.estimatedSize),
-                    speed: prettyBytes(data.speed),
-                    myEta: Math.floor((data.estimatedSize - data.downloadedSize) / data.speed)
+        if (!options.subLang) {
+            if (options.hardsub) {
+                options.subLang = [options.defaultSub];
+            } else {
+                options.subLang = [];
+                for (const sub of subtitles) {
+                    options.subLang.push(await sub.getLanguage());
                 }
-                process.stdout.write(`\rdownloading ${s.percentage}% | ${s.downSize}/${s.estSize} | Speed: ${s.speed}/s | ETA: ${s.myEta}s    `)
-            });
-            await listDownloader.startDownload();
-            console.log(); // new line
+            }
+
         }
 
+        // select and download Subs
+        let hardsubLang: Language | null = null;
+        let subsToInclude: SubToInclude[];
+        if (options.hardsub && options.defaultSub !== "none") {
+            if (options.subLang.length > 1) throw new UserInputError("Cannot embed multiple subtitles with --hardsub");
+            hardsubLang = options.defaultSub;
+            subsToInclude = [];
 
-        // === Video Muxing ===
-
-        const tmpPath = outputPath.substring(0, outputPath.lastIndexOf(".")) + ".tmp" + outputPath.substring(outputPath.lastIndexOf("."));
-
-        const videoMuxer = new VideoMuxer({ input: m3u8FilePath, subtitles: subsToInclude, fonts: fontsToInclude, output: tmpPath });
-        let totalDuration = "";
-
-        if (options.progressBar) {
-            const bar2 = new cliProgress.Bar({
-                format: "muxing [{bar}] {percentage}% | {curDuration}/{totalDuration} | Speed: {fps} fps"
-            }, cliProgress.Presets.shades_classic);
-            bar2.start(1, 0);
-            videoMuxer.on("total", (totalMilliseconds: number, totalString: string) => {
-                bar2.setTotal(totalMilliseconds);
-                totalDuration = totalString;
-            });
-            videoMuxer.on("progress", (progressMilliseconds: number, progressString: string, fps: number) => {
-                bar2.update(progressMilliseconds, {
-                    curDuration: progressString,
-                    totalDuration: totalDuration,
-                    fps
-                });
-            });
-            await videoMuxer.run();
-            bar2.stop();
+            console.log(`Selected "${hardsubLang}" as hardsub language.`);
         } else {
-            videoMuxer.on("info", (data: string) => {
-                if (data.match(/Opening .* for reading/)) return; //Spam
-                else if (data.startsWith("frame=")) process.stdout.write("\r" + data); //replace line
-                else console.log(data);
-            });
-            await videoMuxer.run();
-        }
-        await fs.promises.rename(tmpPath, outputPath);
-    }
+            hardsubLang = null;
+            subsToInclude = await downloadSubs(subtitles, path.join(tmpDir, "SubData"), options.subLang, options.defaultSub);
 
+        }
+        if (subsToInclude.length > 0) {
+            console.log("Following subtitles will be included: ");
+            console.table(subsToInclude, ["title", "langCode", "default"]);
+        } else {
+            console.log("No subtitles will be included.");
+        }
+
+        // download fonts
+        let fontsToInclude: string[] = [];
+        if (options.attachFonts) {
+            fontsToInclude = await downloadFontsFromSubtitles(requesterCdn, options.retry, subsToInclude, path.join(tmpDir, "Fonts"));
+        }
+
+        //console.log(fontsToInclude);
+
+        let selectedStream: StreamInfo | undefined = undefined;
+        if (!options.subsOnly) {
+            const resolution = getMaxWantedResolution(await media.getAvailableResolutions(hardsubLang), options.format);
+
+            // We may get multiple streams on different servers. Just take first.
+            selectedStream = (await media.getStreams(resolution, hardsubLang))[0];
+        }
+
+
+        const metadata: Record<string, string> = {
+            episodeTitle: await media.getEpisodeTitle(),
+            seriesTitle: await media.getSeriesTitle(),
+            episodeNumber: await media.getEpisodeNumber(),
+            seasonTitle: await media.getSeasonTitle(),
+            resolution: options.subsOnly ? "subtitles" : selectedStream?.getHeight() + "p",
+        };
+
+        if (!isNaN(parseInt(metadata.episodeNumber))) {
+            metadata.episodeNumber = pad(metadata.episodeNumber, 2);
+        }
+
+        const formatData: Record<string, string> = {};
+        for (const prop in metadata) {
+            formatData[prop] = toFilename(metadata[prop]);
+        }
+
+        if (!options.output) {
+            if (options.subsOnly) {
+                options.output = "{seasonTitle} [subtitles]/{seasonTitle} - {episodeNumber} - {episodeTitle}.ass";
+            } else {
+                options.output = "{seasonTitle} [{resolution}]/{seasonTitle} - {episodeNumber} - {episodeTitle} [{resolution}].mkv";
+            }
+        }
+        const outputPath = format(options.output, formatData);
+
+        console.log(`Downloading to "${outputPath}"...`);
+
+        try {
+            await fs.promises.access(outputPath, fs.constants.F_OK);
+            console.log("File already exists. Skipping...");
+            return;
+        } catch (e) {
+            // empty
+        }
+
+        const outputDirectory = outputPath.substring(0, outputPath.lastIndexOf("/"));
+        if (outputDirectory.length > 0) {
+            await fs.promises.mkdir(outputDirectory, { recursive: true });
+        }
+        if (options.subsOnly) {
+            await downloadSubsOnly(subsToInclude, outputPath);
+        } else {
+            //const m3u8File = await downloadVideoFromM3U(selectedStream.getUrl(), "VodVid", options)
+            if (!selectedStream) throw new RuntimeError("No stream selcted. Should never happen.");
+            await fs.promises.mkdir(path.join(tmpDir, "VodVid"), { recursive: true });
+
+            // === M3u8 File ===
+            const m3u8File = new M3uDownloader();
+            const m3u8FilePath = path.join(tmpDir, "VodVid.m3u8");
+            await m3u8File.load(selectedStream.getUrl(), tmpDir, "VodVid", requesterCdn);
+            await fs.promises.writeFile(m3u8FilePath, m3u8File.getModifiedM3u());
+
+            // === Key File ===
+            const keyFile = m3u8File.getKeyFile();
+            if (keyFile) {
+
+                await ListDownloader.safeDownload(keyFile.url, keyFile.destination, 5, requesterCdn);
+            }
+
+            // === Video Files Download ===
+            const listDownloader = new ListDownloader(m3u8File.getVideoFiles(), options.retry, options.connections, requesterCdn);
+            if (options.progressBar) {
+                const bar1 = new cliProgress.Bar({
+                    format: "downloading [{bar}] {percentage}% | {downSize}/{estSize} | Speed: {speed}/s | ETA: {myEta}s"
+                }, cliProgress.Presets.shades_classic);
+                bar1.start(1, 0);
+                listDownloader.on("update", (data: DownloadUpdateOptions) => {
+                    bar1.setTotal(data.estimatedSize);
+                    bar1.update(data.downloadedSize, {
+                        downSize: prettyBytes(data.downloadedSize),
+                        estSize: prettyBytes(data.estimatedSize),
+                        speed: prettyBytes(data.speed),
+                        myEta: Math.floor((data.estimatedSize - data.downloadedSize) / data.speed)
+                    });
+                });
+                await listDownloader.startDownload();
+                bar1.stop();
+            } else {
+                let lastPrint = Date.now();
+                listDownloader.on("update", (data: DownloadUpdateOptions) => {
+                    const now = Date.now();
+                    if (now < lastPrint + 1000) return; // Once per second
+                    lastPrint += 1000;
+                    const s = {
+                        percentage: Math.floor(data.downloadedSize / data.estimatedSize * 100),
+                        downSize: prettyBytes(data.downloadedSize),
+                        estSize: prettyBytes(data.estimatedSize),
+                        speed: prettyBytes(data.speed),
+                        myEta: Math.floor((data.estimatedSize - data.downloadedSize) / data.speed)
+                    };
+                    process.stdout.write(`\rdownloading ${s.percentage}% | ${s.downSize}/${s.estSize} | Speed: ${s.speed}/s | ETA: ${s.myEta}s    `);
+                });
+                await listDownloader.startDownload();
+                console.log(); // new line
+            }
+
+
+            // === Video Muxing ===
+
+            const tmpPath = outputPath.substring(0, outputPath.lastIndexOf(".")) + ".tmp" + outputPath.substring(outputPath.lastIndexOf("."));
+
+            const videoMuxer = new VideoMuxer({ input: m3u8FilePath, subtitles: subsToInclude, fonts: fontsToInclude, output: tmpPath });
+            let totalDuration = "";
+
+            if (options.progressBar) {
+                const bar2 = new cliProgress.Bar({
+                    format: "muxing [{bar}] {percentage}% | {curDuration}/{totalDuration} | Speed: {fps} fps"
+                }, cliProgress.Presets.shades_classic);
+                bar2.start(1, 0);
+                videoMuxer.on("total", (totalMilliseconds: number, totalString: string) => {
+                    bar2.setTotal(totalMilliseconds);
+                    totalDuration = totalString;
+                });
+                videoMuxer.on("progress", (progressMilliseconds: number, progressString: string, fps: number) => {
+                    bar2.update(progressMilliseconds, {
+                        curDuration: progressString,
+                        totalDuration: totalDuration,
+                        fps
+                    });
+                });
+                await videoMuxer.run();
+                bar2.stop();
+            } else {
+                videoMuxer.on("info", (data: string) => {
+                    if (data.match(/Opening .* for reading/)) return; //Spam
+                    else if (data.startsWith("frame=")) process.stdout.write("\r" + data); //replace line
+                    else console.log(data);
+                });
+                await videoMuxer.run();
+            }
+            await fs.promises.rename(tmpPath, outputPath);
+        }
+    } finally {
+        deleteFolderRecursive(tmpDir);
+    }
 
 
 }
