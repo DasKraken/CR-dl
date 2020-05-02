@@ -250,7 +250,19 @@ async function downloadVideo(url: string, crDl: CrDl, options: Options): Promise
                 options.output = "{seasonTitle} [{resolution}]/{seasonTitle} - {episodeNumber} - {episodeTitle} [{resolution}].mkv";
             }
         }
-        const outputPath = format(options.output, formatData);
+        let outputPath = format(options.output, formatData);
+
+        const fullPath = path.join(process.cwd(), outputPath);
+        if (fullPath.length > 255) {
+            // windows doesnt support paths longer than 259(-4 for .tmp extension) characters
+            console.log();
+            console.log(`Warning: The path is too long (${fullPath.length} characters but only 255 are allowed) and can cause issues. Please use --output <template> to select a shorter path: ${util.inspect(fullPath)}`);
+            console.log();
+
+            if (process.platform == "win32") {
+                outputPath = "\\\\?\\" + fullPath; // Windows unicode extended-length path 
+            }
+        }
 
         console.log(`Downloading to "${outputPath}"...`);
 
@@ -262,7 +274,7 @@ async function downloadVideo(url: string, crDl: CrDl, options: Options): Promise
             // empty
         }
 
-        const outputDirectory = outputPath.substring(0, outputPath.lastIndexOf("/"));
+        const outputDirectory = path.dirname(outputPath);
         if (outputDirectory.length > 0) {
             await fs.promises.mkdir(outputDirectory, { recursive: true });
         }
