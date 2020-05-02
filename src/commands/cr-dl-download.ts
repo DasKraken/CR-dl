@@ -34,6 +34,7 @@ interface Options {
     attachFonts: boolean;
     subsOnly: boolean;
     output?: string;
+    progressBar: boolean;
     retry: number;
     season?: string[];
     episode?: string[];
@@ -57,6 +58,7 @@ download
     .option("--subs-only", "Download only subtitles. No Video.")
     .option("--hardsub", "Download hardsubbed video stream. Only one subtitle language specified by --default-sub will be included.")
     .option("--retry <N>", "Max number of download attempts before aborting.", "5")
+    .option("--no-progress-bar", "Hide progress bar.")
     .option("--proxy <url>", "HTTP(s) proxy to access Crunchyroll. This is enough to bypass geo-blocking.")
     .option("--proxy-cdn <url>", "HTTP proxy used to download video files. Not required for bypassing geo-blocking.")
     .option("-o, --output <template>", "Output filename template, see the \"OUTPUT TEMPLATE\" in README for all the info.")
@@ -79,6 +81,7 @@ download
             retry: parseInt(cmdObj.retry),
             season: cmdObj.season?.split(","),
             episode: cmdObj.episode?.split(","),
+            progressBar: !!cmdObj.progressBar
         };
 
         if (isNaN(options.connections)) {
@@ -273,21 +276,41 @@ async function downloadVideo(url: string, crDl: CrDl, options: Options): Promise
 
         // === Video Files Download ===
         const listDownloader = new ListDownloader(m3u8File.getVideoFiles(), options.retry, options.connections, requesterCdn);
-        const bar1 = new cliProgress.Bar({
-            format: "downloading [{bar}] {percentage}% | {downSize}/{estSize} | Speed: {speed}/s | ETA: {myEta}s"
-        }, cliProgress.Presets.shades_classic);
-        bar1.start(1, 0);
-        listDownloader.on("update", (data: DownloadUpdateOptions) => {
-            bar1.setTotal(data.estimatedSize);
-            bar1.update(data.downloadedSize, {
-                downSize: prettyBytes(data.downloadedSize),
-                estSize: prettyBytes(data.estimatedSize),
-                speed: prettyBytes(data.speed),
-                myEta: Math.floor((data.estimatedSize - data.downloadedSize) / data.speed)
+        if (options.progressBar) {
+            const bar1 = new cliProgress.Bar({
+                format: "downloading [{bar}] {percentage}% | {downSize}/{estSize} | Speed: {speed}/s | ETA: {myEta}s"
+            }, cliProgress.Presets.shades_classic);
+            bar1.start(1, 0);
+            listDownloader.on("update", (data: DownloadUpdateOptions) => {
+                bar1.setTotal(data.estimatedSize);
+                bar1.update(data.downloadedSize, {
+                    downSize: prettyBytes(data.downloadedSize),
+                    estSize: prettyBytes(data.estimatedSize),
+                    speed: prettyBytes(data.speed),
+                    myEta: Math.floor((data.estimatedSize - data.downloadedSize) / data.speed)
+                });
             });
-        });
-        await listDownloader.startDownload();
-        bar1.stop();
+            await listDownloader.startDownload();
+            bar1.stop();
+        } else {
+            let lastPrint = Date.now();
+            listDownloader.on("update", (data: DownloadUpdateOptions) => {
+                const now = Date.now();
+                if (now < lastPrint + 1000) return; // Once per second
+                lastPrint += 1000;
+                const s = {
+                    percentage: Math.floor(data.downloadedSize / data.estimatedSize * 100),
+                    downSize: prettyBytes(data.downloadedSize),
+                    estSize: prettyBytes(data.estimatedSize),
+                    speed: prettyBytes(data.speed),
+                    myEta: Math.floor((data.estimatedSize - data.downloadedSize) / data.speed)
+                }
+                process.stdout.write(`\rdownloading ${s.percentage}% | ${s.downSize}/${s.estSize} | Speed: ${s.speed}/s | ETA: ${s.myEta}s    `)
+            });
+            await listDownloader.startDownload();
+            console.log(); // new line
+        }
+
 
         // === Video Muxing ===
 
@@ -295,23 +318,33 @@ async function downloadVideo(url: string, crDl: CrDl, options: Options): Promise
 
         const videoMuxer = new VideoMuxer({ input: m3u8FilePath, subtitles: subsToInclude, fonts: fontsToInclude, output: tmpPath });
         let totalDuration = "";
-        const bar2 = new cliProgress.Bar({
-            format: "muxing [{bar}] {percentage}% | {curDuration}/{totalDuration} | Speed: {fps} fps"
-        }, cliProgress.Presets.shades_classic);
-        bar2.start(1, 0);
-        videoMuxer.on("total", (totalMilliseconds: number, totalString: string) => {
-            bar2.setTotal(totalMilliseconds);
-            totalDuration = totalString;
-        });
-        videoMuxer.on("progress", (progressMilliseconds: number, progressString: string, fps: number) => {
-            bar2.update(progressMilliseconds, {
-                curDuration: progressString,
-                totalDuration: totalDuration,
-                fps
+
+        if (options.progressBar) {
+            const bar2 = new cliProgress.Bar({
+                format: "muxing [{bar}] {percentage}% | {curDuration}/{totalDuration} | Speed: {fps} fps"
+            }, cliProgress.Presets.shades_classic);
+            bar2.start(1, 0);
+            videoMuxer.on("total", (totalMilliseconds: number, totalString: string) => {
+                bar2.setTotal(totalMilliseconds);
+                totalDuration = totalString;
             });
-        });
-        await videoMuxer.run();
-        bar2.stop();
+            videoMuxer.on("progress", (progressMilliseconds: number, progressString: string, fps: number) => {
+                bar2.update(progressMilliseconds, {
+                    curDuration: progressString,
+                    totalDuration: totalDuration,
+                    fps
+                });
+            });
+            await videoMuxer.run();
+            bar2.stop();
+        } else {
+            videoMuxer.on("info", (data: string) => {
+                if (data.match(/Opening .* for reading/)) return; //Spam
+                else if (data.startsWith("frame=")) process.stdout.write("\r" + data); //replace line
+                else console.log(data);
+            });
+            await videoMuxer.run();
+        }
         await fs.promises.rename(tmpPath, outputPath);
     }
 

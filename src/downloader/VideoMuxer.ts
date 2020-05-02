@@ -35,7 +35,7 @@ export interface VideoMuxerOptions {
     output: string;
 }
 export declare interface VideoMuxer {
-    on(name: "info", listener: (data: Buffer) => void): this;
+    on(name: "info", listener: (data: string) => void): this;
     on(name: "total", listener: (totalMilliseconds: number, totalString: string) => void): this;
     on(name: "progress", listener: (progressMilliseconds: number, progressString: string, fps: number) => void): this;
     on(name: "end", listener: (code: number) => void): this;
@@ -80,7 +80,7 @@ export class VideoMuxer extends EventEmitter {
             rl.on("line", (data: string) => {
                 const dataString = data.toString();
                 //console.log(util.inspect(dataString))
-                this.emit("info", data);
+                this.emit("info", dataString);
                 const match: RegExpExecArray | null = /Duration: ([0-9]{2}):([0-9]{2}):([0-9]{2}).([0-9]{2}),/.exec(dataString);
                 if (match) {
 
