@@ -116,7 +116,7 @@ download
         console.log(cmdObj);
 
         try {
-            if (/www\.crunchyroll\.com\/([a-z-]{1,5}\/)?[^/]+\/[^/]+-[0-9]+$/.exec(url)) {
+            if (/www\.crunchyroll\.com\/([a-z-]{1,5}\/)?[^/]+\/[^/]+-[0-9]+(:?\?.*)?$/.exec(url)) {
                 await downloadVideo(url, crDl, options);
             } else if (/www\.crunchyroll\.com\/([a-z-]{1,5}\/)?[^/]+\/?$/.exec(url)) {
                 await downloadSeries(url, crDl, options);
