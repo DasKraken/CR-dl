@@ -28,7 +28,7 @@ Bei Windows könnt ihr eine Konsole öffnen indem ihr im Projektverzeichnis (wo 
 
 Folgende Befehle können verwendet werden:
 
-Sich in Crunchyroll einloggen um auf Premiumcontent zuzugreifen (Dies erstellt die Datei 'cookies.data' , die die Sitzung speichert). Falls Benutzername und/oder Password nicht angegeben wird, wird eine Eingabe aufgefordert:
+Sich in Crunchyroll einloggen um auf Premiumcontent zuzugreifen (Dies erstellt die Datei 'cookies.txt', die die Sitzung speichert). Falls Benutzername und/oder Password nicht angegeben wird, wird eine Eingabe aufgefordert. Bei Problemen (z.B. Captcha) siehe [Alternative Einloggemöglichkeiten für CR-dl](#alternative-einloggemöglichkeiten-für-cr-dl):
 ```
 cr-dl login [username] [password]
 ```
@@ -88,6 +88,9 @@ Lade einen Hardsub Videostream runter. Nur eine Untertitelsprache wird eingebett
 
 ```--retry <N>```
 Anzahl Wiederholungsversuche bei Netzwerkproblemen. (Standard: 5)
+
+```--cookies <FILE>```
+Datei, wo cookies gelesen und gespeichert werden (Standard: "cookies.txt")
 
 ```--no-progress-bar```
 Keinen Fortschrittsbalken anzeigen.
@@ -182,6 +185,13 @@ Lädt Video(s) und bennent es wie ein Scene-Release:
 cr-dl download -o "{seasonTitle!scene}.{resolution}.WEB.x264-byME/{seasonTitle!scene}.E{episodeNumber}.{resolution}.WEB.x264-byME.mkv" <URL>
 ```
 
+## Alternative Einloggemöglichkeiten für CR-dl
+
+Falls Sie sich nicht über CR-dl einloggen können (z.B. wegen Captcha) kann man alternativ die Cookies aus dem Browser übernehmen.
+
+Um Cookies aus dem Browser zu extrahieren, verwenden Sie eine beliebige konforme Browser-Erweiterung für den Export von Cookies. Zum Beispiel, [cookies.txt](https://chrome.google.com/webstore/detail/cookiestxt/njabckikapfpffapmjgojcnbfjonfjfg) (für Chrome) oder [cookies.txt](https://addons.mozilla.org/en-US/firefox/addon/cookies-txt/) (für Firefox).
+
+Standardmäßig nutzt CR-dl die Datei `cookies.txt` im Arbeitsverzeichnis. Um dies zu ändern nutzen Sie die `--cookies` Option, zum Beispiel `--cookies /path/to/cookies/file.txt`.
 
 
 ## Lizenz

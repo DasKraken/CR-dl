@@ -26,7 +26,7 @@ CR-dl is a CLI-Tool and can only be run from the terminal.
 Following commands are available:
 
 
-Log in into Crunchyroll to be get access to premium content (This will create a file 'cookies.data' to store the session). If username and/or password is not given, it will prompt you for them:
+Log in into Crunchyroll to be get access to premium content (This will create a file 'cookies.txt' to store the session). If username and/or password is not given, it will prompt you for them. On Problems (e.g. Captcha) see [alternative login methods to CR-dl](#alternative-login-methods-to-cr-dl):
 ```
 cr-dl login [username] [password]
 ```
@@ -85,6 +85,9 @@ Download hardsubbed video stream. Only one subtitle language specified by --defa
 
 ```--retry <N>```
 Max number of download attempts before aborting. (Default: 5)
+
+```--cookies <FILE>```
+File to read cookies from and dump cookie jar in (default: "cookies.txt")
 
 ```--no-progress-bar```
 Hide progress bar.
@@ -176,6 +179,13 @@ Download video and name it like a scene release:
 cr-dl download -o "{seasonTitle!scene}.{resolution}.WEB.x264-byME/{seasonTitle!scene}.E{episodeNumber}.{resolution}.WEB.x264-byME.mkv" <URL>
 ```
 
+## Alternative login methods to CR-dl
+
+If you are unable to login using CR-dl (e.g. Captcha), it's possible to use the cookies from your browser.
+
+In order to extract cookies from browser use any conforming browser extension for exporting cookies. For example, [cookies.txt](https://chrome.google.com/webstore/detail/cookiestxt/njabckikapfpffapmjgojcnbfjonfjfg) (for Chrome) or [cookies.txt](https://addons.mozilla.org/en-US/firefox/addon/cookies-txt/) (for Firefox).
+
+By default CR-dl uses the file `cookies.txt` in the current working directory. To change this use the `--cookies` option, for example `--cookies /path/to/cookies/file.txt`.
 
 
 ## License
