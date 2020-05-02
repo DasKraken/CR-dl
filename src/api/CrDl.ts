@@ -156,7 +156,7 @@ export class CrDl {
                 if (seasonNum == -1) seasonNum = 0;
                 list[seasonNum].episodes.push({
                     url: m[1],
-                    name: m[2],
+                    name: AllHtmlEntities.decode(m[2]),
                     number: m[3]
                 });
             }
