@@ -9,6 +9,8 @@ export interface VideoInfo {
     getSeriesTitle(): Promise<string>;
     getSeasonTitle(): Promise<string>;
     getEpisodeNumber(): Promise<string>;
+    isRegionBlocked(): Promise<boolean>;
+    isPremiumBlocked(): Promise<boolean>;
 }
 
 export interface SubtitleInfo {

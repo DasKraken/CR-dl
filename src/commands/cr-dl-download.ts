@@ -140,6 +140,13 @@ async function downloadVideo(url: string, crDl: CrDl, options: Options): Promise
 
     const media = await crDl.loadEpisode(url);
 
+    if (await media.isPremiumBlocked()) {
+        throw new UserInputError("Error: Episode requires a premium account.");
+    }
+    if (await media.isRegionBlocked()) {
+        throw new UserInputError("Error: Episode seems to be blocked in your region. In some cases it's still watchable with a premium account.");
+    }
+
     const subtitles = await media.getSubtitles();
 
     if (options.listSubs) {
