@@ -12,15 +12,17 @@ login
     .description("Login into CR. Cookies are stores in \"cookies.data\".")
     .arguments("[username] [password]")
     .option("--proxy <proxy>", "HTTP proxy used to access Crunchyroll.")
+    .option("--cookies <FILE>", "File to read cookies from and dump cookie jar in", "cookies.txt")
     .action(async function (username: string | undefined, password: string | undefined, cmdObj) {
 
-        const options: { proxy?: string } = { proxy: cmdObj.proxy };
+        const options: { proxy?: string; cookies: string } = { proxy: cmdObj.proxy, cookies: cmdObj.cookies };
 
-        loadCookies();
+        loadCookies(options);
         const requester = getRequester(options);
         const crDl = new CrDl({ requester: requester });
         if (await crDl.isLoggedIn()) {
             console.log("Already logged in!");
+            saveCookies(options);
             return;
         }
 
@@ -46,5 +48,5 @@ login
                 console.log(error);
             }
         }
-        saveCookies();
+        saveCookies(options);
     });

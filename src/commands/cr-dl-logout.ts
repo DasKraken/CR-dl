@@ -10,11 +10,12 @@ logout
     .name("logout")
     .description("Logs out of CR.")
     .option("--proxy <proxy>", "HTTP proxy used to access Crunchyroll.")
+    .option("--cookies <FILE>", "File to read cookies from and dump cookie jar in", "cookies.txt")
     .action(async function (cmdObj) {
 
-        const options: { proxy?: string } = { proxy: cmdObj.proxy };
+        const options: { proxy?: string; cookies: string } = { proxy: cmdObj.proxy, cookies: cmdObj.cookies };
 
-        loadCookies();
+        loadCookies(options);
         const requester = getRequester(options);
         const crDl = new CrDl({ requester: requester });
 
@@ -28,5 +29,5 @@ logout
                 console.log(error);
             }
         }
-        saveCookies();
+        saveCookies(options);
     });

@@ -1,6 +1,7 @@
 dist
 lib
 cookies.data
+cookies.txt
 node_modules
 *.bat
 SubData

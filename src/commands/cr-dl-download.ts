@@ -38,6 +38,7 @@ interface Options {
     retry: number;
     season?: string[];
     episode?: string[];
+    cookies: string;
 }
 
 let requester: Requester;
@@ -58,6 +59,7 @@ download
     .option("--subs-only", "Download only subtitles. No Video.")
     .option("--hardsub", "Download hardsubbed video stream. Only one subtitle language specified by --default-sub will be included.")
     .option("--retry <N>", "Max number of download attempts before aborting.", "5")
+    .option("--cookies <FILE>", "File to read cookies from and dump cookie jar in", "cookies.txt")
     .option("--no-progress-bar", "Hide progress bar.")
     .option("--proxy <url>", "HTTP(s) proxy to access Crunchyroll. This is enough to bypass geo-blocking.")
     .option("--proxy-cdn <url>", "HTTP proxy used to download video files. Not required for bypassing geo-blocking.")
@@ -78,10 +80,11 @@ download
             attachFonts: !!cmdObj.attachFonts,
             subsOnly: !!cmdObj.subsOnly,
             output: cmdObj.output,
+            progressBar: !!cmdObj.progressBar,
             retry: parseInt(cmdObj.retry),
             season: cmdObj.season?.split(","),
             episode: cmdObj.episode?.split(","),
-            progressBar: !!cmdObj.progressBar
+            cookies: cmdObj.cookies,
         };
 
         if (isNaN(options.connections)) {
@@ -109,7 +112,7 @@ download
 
 
 
-        loadCookies();
+        loadCookies(options);
         requester = getRequester(options);
         requesterCdn = getRequesterCdn(options);
         const crDl = new CrDl({ requester: requester, requesterCdn: requesterCdn });
@@ -131,7 +134,7 @@ download
             }
         }
 
-        saveCookies();
+        saveCookies(options);
 
     });
 

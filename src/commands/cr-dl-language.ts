@@ -12,10 +12,11 @@ language
     .description("Get or set the language of CR and metadata. (Note 1: It doesn't change default subtitle language. Note 2: Videos that aren't available in selected language may not work). Available options are: " + languages.join(", "))
     .arguments("[language]")
     .option("--proxy <proxy>", "HTTP proxy used to access Crunchyroll.")
+    .option("--cookies <FILE>", "File to read cookies from and dump cookie jar in", "cookies.txt")
     .action(async function (language: Language | undefined, cmdObj) {
 
-        const options: { proxy?: string } = { proxy: cmdObj.proxy };
-        loadCookies();
+        const options: { proxy?: string; cookies: string } = { proxy: cmdObj.proxy, cookies: cmdObj.cookies };
+        loadCookies(options);
         const requester = getRequester(options);
         const crDl = new CrDl({ requester: requester });
 
@@ -49,7 +50,7 @@ language
                 console.log(error);
             }
         }
-        saveCookies();
+        saveCookies(options);
     });
 
 

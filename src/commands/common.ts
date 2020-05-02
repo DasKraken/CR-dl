@@ -20,10 +20,10 @@ interface ToughCookie {
     creation: string;
 }
 
-export function loadCookies(): void {
+export function loadCookies(options: { cookies: string }): void {
 
-    if (fs.existsSync("cookies.data")) {
-        const fileData = fs.readFileSync("cookies.data", { encoding: "utf8" }).toString();
+    if (fs.existsSync(options.cookies)) {
+        const fileData = fs.readFileSync(options.cookies, { encoding: "utf8" }).toString();
         try {
             // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
             // @ts-ignore
@@ -81,7 +81,7 @@ export function loadCookies(): void {
 
 }
 
-export function saveCookies(): void {
+export function saveCookies(options: { cookies: string }): void {
     // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
     // @ts-ignore
     const cookieList: ToughCookie[] = cookies._jar.serializeSync().cookies;
@@ -111,7 +111,7 @@ export function saveCookies(): void {
     }
 
 
-    fs.writeFileSync("cookies.data", data);
+    fs.writeFileSync(options.cookies, data);
 
 }
 
