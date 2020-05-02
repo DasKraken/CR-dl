@@ -347,8 +347,22 @@ async function downloadVideo(url: string, crDl: CrDl, options: Options): Promise
                         fps
                     });
                 });
-                await videoMuxer.run();
-                bar2.stop();
+                const output: string[] = [];
+                videoMuxer.on("info", (data: string) => {
+                    if (data.match(/Opening .* for reading/)) return; //Spam
+                    else if (data.startsWith("frame=")) return; //status
+                    else output.push(data); // Remember in case of error
+                });
+                try {
+                    await videoMuxer.run();
+                    bar2.stop();
+                } catch (e) {
+                    // Error: print ffmpeg output
+                    bar2.stop();
+                    console.log("ffmpeg output: " + output.join("\r\n"));
+                    throw e;
+                }
+
             } else {
                 videoMuxer.on("info", (data: string) => {
                     if (data.match(/Opening .* for reading/)) return; //Spam
