@@ -14,7 +14,7 @@ CR-dl erfordert, dass [node.js (v12 oder höher)](https://nodejs.org) und [ffmpe
 
 Nachdem sie installiert sind, führt aus:
 
-    npm install -g https://github.com/DasKraken/CR-dl.git
+    npm install -g @derkraken/cr-dl
 
 nun kann man es mit ```cr-dl``` aufrufen.
 

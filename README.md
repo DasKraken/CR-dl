@@ -14,7 +14,7 @@ CR-dl requires [node.js (v12 or later)](https://nodejs.org) and [ffmpeg](https:/
 
 After these are installed run:
 
-    npm install -g https://github.com/DasKraken/CR-dl.git
+    npm install -g @derkraken/cr-dl
 
 now you can run it with ```cr-dl```
 
