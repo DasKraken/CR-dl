@@ -50,7 +50,7 @@ language
                 console.log(error);
             }
         }
-        saveCookies(options);
+        saveCookies(options, true);
     });
 
 

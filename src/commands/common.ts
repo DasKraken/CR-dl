@@ -81,7 +81,12 @@ export function loadCookies(options: { cookies: string }): void {
 
 }
 
-export function saveCookies(options: { cookies: string }): void {
+export function saveCookies(options: { cookies: string }, createFile?: boolean): void {
+
+    if (!createFile && !fs.existsSync(options.cookies)) {
+        return;
+    }
+
     // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
     // @ts-ignore
     const cookieList: ToughCookie[] = cookies._jar.serializeSync().cookies;
