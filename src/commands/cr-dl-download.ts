@@ -17,6 +17,7 @@ import { ListDownloader, DownloadUpdateOptions } from "../downloader/ListDownloa
 import { VideoMuxer } from "../downloader/VideoMuxer";
 import * as cliProgress from "cli-progress";
 import prettyBytes from "pretty-bytes";
+import { spawn } from "child_process";
 const format = format_.create({
     scene: formatScene
 });
@@ -109,7 +110,15 @@ download
             }
         }
 
-
+        if (!options.subsOnly && !options.listSubs) {
+            // ffmpeg is required
+            try {
+                await verifyFfmpeg();
+            } catch (e) {
+                console.error("Error: ffmpeg needs to be installed");
+                return;
+            }
+        }
 
         loadCookies(options);
         requester = getRequester(options);
@@ -639,3 +648,16 @@ function getMaxWantedResolution(availableResolutions: number[], res: number | st
     throw new RuntimeError("No resolutions found.");
 
 }
+
+function verifyFfmpeg(): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const proc = spawn("ffmpeg");
+        proc.on("error", (err) => {
+            reject(err);
+        });
+        proc.on("close", () => {
+            resolve();
+        });
+    });
+}
+
