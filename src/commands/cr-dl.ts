@@ -5,7 +5,7 @@ import { logout } from "./cr-dl-logout";
 import { language } from "./cr-dl-language";
 import { download } from "./cr-dl-download";
 
-program.version("0.1.0")
+program.version("4.0.0")
     .addCommand(login)
     .addCommand(logout)
     .addCommand(language)

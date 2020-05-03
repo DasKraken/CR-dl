@@ -1,7 +1,7 @@
 {
   "name": "cr-dl",
-  "version": "3.3.1",
-  "description": "",
+  "version": "4.0.0",
+  "description": "A tool to quickly download anime from Crunchyroll",
   "main": "lib/api/CrDl.js",
   "types": "lib/api/CrDl.d.ts",
   "keywords": [
