@@ -67,3 +67,20 @@ export function parseM3U(data: string): Promise<M3U> {
         parser.end();
     });
 }
+
+export function matchAll(str: string, regex: RegExp): RegExpMatchArray[] {
+    let m: RegExpExecArray | null;
+
+    const results: RegExpExecArray[] = [];
+
+    while ((m = regex.exec(str)) !== null) {
+        // This is necessary to avoid infinite loops with zero-width matches
+        if (m.index === regex.lastIndex) {
+            regex.lastIndex++;
+        }
+
+        // The result can be accessed through the `m`-variable.
+        results.push(m);
+    }
+    return results;
+}

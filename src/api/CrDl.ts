@@ -8,6 +8,7 @@ import { Language } from "../types/language";
 import { VilosVideoInfo } from "./MediaVilosPlayer";
 import { VideoInfo } from "../interfaces/video";
 import { AllHtmlEntities } from "html-entities";
+import { matchAll } from "../Utils";
 
 
 
@@ -144,8 +145,8 @@ export class CrDl {
         const page: string = (await this._requester.get(url)).body.toString();
 
 
-        const regionBlockedSeasons: string[] = Array.from(page.matchAll(/<p class="availability-notes-low">[^<]+?: ([^<]+)<\/p>/g)).map((v: RegExpMatchArray) => AllHtmlEntities.decode(v[1]));
-        const languageBlockedSeasons: string[] = Array.from(page.matchAll(/<p class="availability-notes-low">([^<]+) (?:ist in|no está|is not|n'est pas|non è|недоступен)[^<]+<\/p>/g)).map((v: RegExpMatchArray) => AllHtmlEntities.decode(v[1]));
+        const regionBlockedSeasons: string[] = matchAll(page, /<p class="availability-notes-low">[^<]+?: ([^<]+)<\/p>/g).map((v: RegExpMatchArray) => AllHtmlEntities.decode(v[1]));
+        const languageBlockedSeasons: string[] = matchAll(page, /<p class="availability-notes-low">([^<]+) (?:ist in|no está|is not|n'est pas|non è|недоступен)[^<]+<\/p>/g).map((v: RegExpMatchArray) => AllHtmlEntities.decode(v[1]));
 
         console.log(regionBlockedSeasons);
         console.log(languageBlockedSeasons);
