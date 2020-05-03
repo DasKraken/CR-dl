@@ -147,7 +147,7 @@ cr-dl download http://www.crunchyroll.com/hinamatsuri/episode-4-disownment-rock-
 
 Download all episodes of HINAMATSURI in 720p using 10 simultaneous connections, and will set the default subtitle language to enUS:
 ```
-cr-dl download -c 10 -default-sub enUS http://www.crunchyroll.com/hinamatsuri -f 720p
+cr-dl download -c 10 --default-sub enUS http://www.crunchyroll.com/hinamatsuri -f 720p
 ```
 
 
@@ -159,13 +159,13 @@ cr-dl download http://www.crunchyroll.com/food-wars-shokugeki-no-soma --season 2
 
 Download Bungo Stray Dogs 1 and 2:
 ```
-cr-dl download http://www.crunchyroll.com/bungo-stray-dogs --season 6,7
+cr-dl download http://www.crunchyroll.com/bungo-stray-dogs --season 14,15
 ```
 
 
 Download episodes 1,3,4,5 and special 2 of DITF (SP2 is not available anymore):
 ```
-cr-dl download http://www.crunchyroll.com/darling-in-the-franxx --episode 1,3-5,SP2
+cr-dl download http://www.crunchyroll.com/darling-in-the-franxx --season 6 --episode 1,3-5,SP2
 ```
 
 

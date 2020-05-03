@@ -66,7 +66,6 @@ download
     .option("-o, --output <template>", "Output filename template, see the \"OUTPUT TEMPLATE\" in README for all the info.")
     .action(async function (url: string, cmdObj) {
 
-        console.log(cmdObj);
 
         const options: Options = {
             proxy: cmdObj.proxy,
@@ -75,15 +74,15 @@ download
             connections: parseInt(cmdObj.connections),
             listSubs: !!cmdObj.listSubs,
             defaultSub: cmdObj.defaultSub,
-            subLang: cmdObj.subLang ? cmdObj.subLang.split(",") : undefined,
+            subLang: cmdObj.subLang ? cmdObj.subLang.split(/[, ]/) : undefined,
             hardsub: !!cmdObj.hardsub,
             attachFonts: !!cmdObj.attachFonts,
             subsOnly: !!cmdObj.subsOnly,
             output: cmdObj.output,
             progressBar: !!cmdObj.progressBar,
             retry: parseInt(cmdObj.retry),
-            season: cmdObj.season?.split(","),
-            episode: cmdObj.episode?.split(","),
+            season: cmdObj.season?.split(/[, ]/),
+            episode: cmdObj.episode?.split(/[, ]/),
             cookies: cmdObj.cookies,
         };
 
@@ -116,7 +115,6 @@ download
         requester = getRequester(options);
         requesterCdn = getRequesterCdn(options);
         const crDl = new CrDl({ requester: requester, requesterCdn: requesterCdn });
-        console.log(cmdObj);
 
         try {
             if (/www\.crunchyroll\.com\/([a-z-]{1,5}\/)?[^/]+\/[^/]+-[0-9]+(:?\?.*)?$/.exec(url)) {
@@ -389,7 +387,11 @@ async function downloadVideo(url: string, crDl: CrDl, options: Options): Promise
             await fs.promises.rename(tmpPath, outputPath);
         }
     } finally {
-        deleteFolderRecursive(tmpDir);
+        try {
+            deleteFolderRecursive(tmpDir);
+        } catch (e) {
+            // empty
+        }
     }
 
 
@@ -417,7 +419,7 @@ async function downloadSeries(url: string, crDl: CrDl, options: Options): Promis
 
             if (bounds.length == 1) {
                 if (isNaN(parseInt(bounds[0]))) throw new UserInputError(`Season number "${bounds[0]}" invalid.`);
-                return parseInt(bounds[0]);
+                return parseInt(bounds[0]) - 1;
             } else if (bounds.length == 2) {
                 if (isNaN(parseInt(bounds[0]))) throw new UserInputError(`Season number "${bounds[0]}" invalid.`);
                 if (isNaN(parseInt(bounds[1]))) throw new UserInputError(`Season number "${bounds[1]}" invalid.`);
