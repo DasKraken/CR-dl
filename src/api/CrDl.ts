@@ -27,6 +27,12 @@ export interface Season {
     isRegionBlocked: boolean;
     isLanguageUnavailable: boolean;
 }
+export interface User {
+    username: string;
+    email: string;
+    createdAt: string;
+}
+
 
 
 export class CrDl {
@@ -51,7 +57,17 @@ export class CrDl {
         return res.body.indexOf("<a href=\"/logout\"") > -1;
     }
 
-    async login(username: string, password: string): Promise<void> {
+    async getLoggedIn(): Promise<User | undefined> {
+        const res = await this._requester.get("http://www.crunchyroll.com/videos/anime");
+        const m = /\$\.extend\(traits, (.*)\);$/m.exec(res.body.toString());
+        if (m) {
+            return JSON.parse(m[1]) as User;
+        } else {
+            return undefined;
+        }
+    }
+
+    async login(username: string, password: string): Promise<User> {
         const loginPage: { body: Buffer; url: string } = await this._requester.get("https://www.crunchyroll.com/login");
 
         const loginTokenMatch = /name="login_form\[_token\]" value="([^"]+)" \/>/.exec(loginPage.body.toString());
@@ -70,8 +86,9 @@ export class CrDl {
             console.log(e);
 
         }
-        if (await this.isLoggedIn()) {
-            return;
+        const user = await this.getLoggedIn();
+        if (user) {
+            return user;
         } else {
             throw new UserInputError("Couldn't log in. Wrong credentials?");
         }

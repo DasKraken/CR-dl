@@ -20,8 +20,9 @@ login
         loadCookies(options);
         const requester = getRequester(options);
         const crDl = new CrDl({ requester: requester });
-        if (await crDl.isLoggedIn()) {
-            console.log("Already logged in!");
+        const user = await crDl.getLoggedIn();
+        if (user) {
+            console.log(`Already logged in as ${user.username}!`);
             saveCookies(options);
             return;
         }
@@ -39,8 +40,8 @@ login
         }
 
         try {
-            await crDl.login(username, password);
-            console.log("Successfully logged in!");
+            const user = await crDl.login(username, password);
+            console.log(`Successfully logged in as ${user.username}!`);
         } catch (error) {
             if (error instanceof UserInputError) {
                 console.log(error.message); // Dont print stacktrace

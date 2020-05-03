@@ -1,10 +1,10 @@
-import { CrDl } from "../src/api/CrDl"
+import { CrDl } from "../src/api/CrDl";
 
 test("CrDl getEpisodesFromUrl", async () => {
     jest.setTimeout(100000);
     const crdl = new CrDl();
     await crdl.setLang("deDE");
-    const seasons = await crdl.getEpisodesFormUrl("https://www.crunchyroll.com/new-game")
+    const seasons = await crdl.getEpisodesFormUrl("https://www.crunchyroll.com/new-game");
     //console.log(JSON.stringify(seasons));
 
     expect(seasons).toStrictEqual([
@@ -47,6 +47,7 @@ test("CrDl getEpisodesFromUrl", async () => {
     ]);
 });
 
-test("CrDl getEpisodesFromUrl", async () => {
+/*test("CrDl getEpisodesFromUrl", async () => {
 
 });
+*/

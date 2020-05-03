@@ -1,4 +1,4 @@
-import { CrDl } from "../src/api/CrDl"
+import { CrDl } from "../src/api/CrDl";
 import { Language } from "../src/types/language";
 
 test("CrDl login/logout", async () => {
@@ -6,11 +6,13 @@ test("CrDl login/logout", async () => {
     const crdl = new CrDl();
 
     expect(await crdl.isLoggedIn()).toBe(false);
-    await crdl.login("GeliebtLebhafterLeopard@spam.care", "coat-unadorned-glacier");
+    const user = await crdl.login("GeliebtLebhafterLeopard@spam.care", "coat-unadorned-glacier");
+    expect(user.username).toBe("GeliebtLebhafterLeopard");
+    expect(user.email).toBe("GeliebtLebhafterLeopard@spam.care");
     expect(await crdl.isLoggedIn()).toBe(true);
     await crdl.logout();
     expect(await crdl.isLoggedIn()).toBe(false);
-})
+});
 
 
 test("CrDl setLang/getLang", async () => {
@@ -24,5 +26,5 @@ test("CrDl setLang/getLang", async () => {
         await crdl.setLang(lang);
         expect(await crdl.getLang()).toBe(lang);
     }
-})
+});
 
