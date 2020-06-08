@@ -1,5 +1,5 @@
 import * as fs from "fs";
-const removeDiacritics = require("diacritics").remove;
+import {remove as removeDiacritics} from "diacritics";
 import m3u8, { M3U } from "m3u8";
 
 

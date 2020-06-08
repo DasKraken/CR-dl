@@ -25,7 +25,7 @@ export function loadCookies(options: { cookies: string }): void {
     if (fs.existsSync(options.cookies)) {
         const fileData = fs.readFileSync(options.cookies, { encoding: "utf8" }).toString();
         try {
-            // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
             cookies._jar._importCookiesSync(JSON.parse(fileData));
             return;
@@ -71,7 +71,7 @@ export function loadCookies(options: { cookies: string }): void {
                 "rejectPublicSuffixes": true,
                 "cookies": cookieList
             };
-            // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
             cookies._jar._importCookiesSync(out);
             return;
@@ -87,7 +87,7 @@ export function saveCookies(options: { cookies: string }, createFile?: boolean):
         return;
     }
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     const cookieList: ToughCookie[] = cookies._jar.serializeSync().cookies;
     //fs.writeFileSync("cookies.data", JSON.stringify(cookies._jar.serializeSync()));

@@ -29,7 +29,7 @@ export default function (jar: request.CookieJar, proxy?: string): Requester {
     return {
         get: (url: string): Promise<{ body: Buffer; url: string }> => {
             return new Promise((resolve, reject) => {
-                // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
                 cloudscraper({ method: "GET", url: url, jar: jar, encoding: null, resolveWithFullResponse: true, proxy: proxy, agentOptions: agentOptions }).then((r: request.Response) => {
                     resolve({ body: r.body, url: r.request.uri.href as string });
@@ -39,7 +39,7 @@ export default function (jar: request.CookieJar, proxy?: string): Requester {
         },
         post: (url: string, formData?: Record<string, string>): Promise<{ body: Buffer }> => {
             return new Promise((resolve, reject) => {
-                // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
                 cloudscraper({ method: "POST", url: url, jar: jar, encoding: null, resolveWithFullResponse: true, proxy: proxy, formData: formData, agentOptions: agentOptions }).then((r: request.Response) => {
                     resolve({ body: r.body });

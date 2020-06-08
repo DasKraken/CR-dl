@@ -5,7 +5,9 @@ export interface Requester {
         body: Buffer;
         url: string;
     }>;
-    post: (url: string, formdata?: Record<string, string>) => Promise<{}>;
+    post: (url: string, formdata?: Record<string, string>) => Promise<{
+        body: Buffer;
+    }>;
 }
 
 export interface OnResponse {
