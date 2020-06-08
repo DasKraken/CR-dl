@@ -1,6 +1,6 @@
 {
   "name": "@derkraken/cr-dl",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "A tool to quickly download anime from Crunchyroll",
   "main": "lib/api/CrDl.js",
   "types": "lib/api/CrDl.d.ts",
