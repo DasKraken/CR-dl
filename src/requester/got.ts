@@ -61,10 +61,10 @@ export default function (proxy?: string, retry?: number): RequesterCdn {
     }
     return {
         stream: (url: string): Readable => {
-            return got.stream(url, { agent, retry });
+            return got.stream(url, { agent, retry, timeout: 15000 });
         },
         get: (url: string): Promise<{ body: Buffer; url: string }> => {
-            return got.get(url, { responseType: "buffer", agent, retry });
+            return got.get(url, { responseType: "buffer", agent, retry, timeout: 15000 });
         }
     };
 
