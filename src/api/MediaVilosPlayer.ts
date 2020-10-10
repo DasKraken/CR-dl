@@ -138,6 +138,9 @@ export class VilosVideoInfo implements VideoInfo {
         this._html = html;
         this._url = url;
         this._requester = requester;
+        
+        const fastfix = /<span id="sharing_add_queue_button" (.*?)>/gms;
+        this._html = this._html.replace(fastfix, "");
 
         const matchConfig = this._html.match(/vilos\.config\.media = (.+);/);
         if (!matchConfig) throw new Error("Couldn't find video config on webpage.");
